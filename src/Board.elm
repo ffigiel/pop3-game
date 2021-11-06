@@ -1,6 +1,20 @@
-module Board exposing (Board, Piece(..), chainOfSameColor)
+module Board exposing (Board, Piece(..), chainOfSameColor, generator)
 
 import Array2d exposing (Array2d)
+import Random exposing (Generator)
+
+
+size : { width : Int, height : Int }
+size =
+    { width = 5, height = 8 }
+
+
+generator : Generator Board
+generator =
+    Random.uniform Red pieces
+        |> Random.list size.width
+        |> Random.list size.height
+        |> Random.map Array2d.fromList
 
 
 type alias Board =
@@ -11,6 +25,16 @@ type Piece
     = Red
     | Green
     | Blue
+    | Yellow
+
+
+pieces : List Piece
+pieces =
+    [ Red
+    , Green
+    , Blue
+    , Yellow
+    ]
 
 
 type alias BoardSearch =

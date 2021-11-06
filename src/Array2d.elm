@@ -1,5 +1,7 @@
 module Array2d exposing
     ( Array2d
+    , empty
+    , fromList
     , get
     , indexedMap
     , map
@@ -26,3 +28,14 @@ get : Int -> Int -> Array2d a -> Maybe a
 get x y =
     Array.get y
         >> Maybe.andThen (Array.get x)
+
+
+fromList : List (List a) -> Array2d a
+fromList =
+    List.map Array.fromList
+        >> Array.fromList
+
+
+empty : Array2d a
+empty =
+    Array.empty

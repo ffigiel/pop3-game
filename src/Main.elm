@@ -6,6 +6,7 @@ import Browser
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
+import Random
 
 
 
@@ -40,20 +41,12 @@ init : Flags -> ( Model, Cmd Msg )
 init _ =
     let
         model =
-            { board = board
+            { board = Array.empty
             , debug = ""
             }
 
-        board =
-            [ [ Red, Green, Green ]
-            , [ Red, Green, Blue ]
-            , [ Blue, Green, Blue ]
-            ]
-                |> List.map Array.fromList
-                |> Array.fromList
-
         cmd =
-            Cmd.none
+            Random.generate GotBoard Board.generator
     in
     ( model, cmd )
 
@@ -63,12 +56,16 @@ init _ =
 
 
 type Msg
-    = ClickedPiece Piece ( Int, Int )
+    = GotBoard Board
+    | ClickedPiece Piece ( Int, Int )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotBoard board ->
+            ( { model | board = board }, Cmd.none )
+
         ClickedPiece piece ( x, y ) ->
             let
                 debug =
@@ -130,6 +127,9 @@ viewPiece y x piece =
 
                 Blue ->
                     "-blue"
+
+                Yellow ->
+                    "-yellow"
     in
     H.button
         [ HA.class "gamePiece"
