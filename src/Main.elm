@@ -1,13 +1,16 @@
 module Main exposing (main)
 
 import Array exposing (Array)
+import Array2d
 import Board exposing (Board, Piece(..))
 import Browser
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
+import Process
 import Random
 import Set exposing (Set)
+import Task
 
 
 
@@ -35,7 +38,7 @@ type alias Flags =
 type alias Model =
     { board : Board
     , score : Int
-    , removingPieces : Set ( Int, Int )
+    , removedPieces : Set ( Int, Int )
     }
 
 
@@ -45,7 +48,7 @@ init _ =
         model =
             { board = Array.empty
             , score = 0
-            , removingPieces = Set.empty
+            , removedPieces = Set.empty
             }
 
         cmd =
@@ -61,6 +64,7 @@ init _ =
 type Msg
     = GotBoard Board
     | ClickedPiece Piece ( Int, Int )
+    | UpdateRemovedPieces
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -79,11 +83,25 @@ update msg model =
 
             else
                 ( { model
-                    | score = Set.size matches
-                    , removingPieces = matches
+                    | score = model.score + Set.size matches
+                    , removedPieces = matches
                   }
-                , Cmd.none
+                , Task.perform (\_ -> UpdateRemovedPieces) (Process.sleep 500)
                 )
+
+        UpdateRemovedPieces ->
+            let
+                newBoard =
+                    model.board
+                        |> Board.removePieces model.removedPieces
+                        |> Array2d.map (Maybe.withDefault Red)
+            in
+            ( { model
+                | board = newBoard
+                , removedPieces = Set.empty
+              }
+            , Cmd.none
+            )
 
 
 subscriptions : Model -> Sub Msg
@@ -95,6 +113,9 @@ view : Model -> Html Msg
 view model =
     H.div []
         [ viewBoard model
+        , H.p []
+            [ H.text <| String.fromInt model.score
+            ]
         ]
 
 
@@ -107,7 +128,7 @@ viewBoard model =
                 (Array.toList row
                     |> List.indexedMap
                         (\x piece ->
-                            viewPiece x y (Set.member ( x, y ) model.removingPieces) piece
+                            viewPiece x y (Set.member ( x, y ) model.removedPieces) piece
                         )
                 )
     in

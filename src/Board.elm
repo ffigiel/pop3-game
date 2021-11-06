@@ -1,5 +1,12 @@
-module Board exposing (Board, Piece(..), chainOfSameColor, generator)
+module Board exposing
+    ( Board
+    , Piece(..)
+    , chainOfSameColor
+    , generator
+    , removePieces
+    )
 
+import Array
 import Array2d exposing (Array2d)
 import Random exposing (Generator)
 import Set exposing (Set)
@@ -94,3 +101,37 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
 
     else
         ( newBoardSearch, results )
+
+
+removePieces : Set ( Int, Int ) -> Board -> Array2d (Maybe Piece)
+removePieces removedPieces board =
+    let
+        ( _, colLength ) =
+            Array2d.size board
+
+        withPiecesRemoved : Array2d (Maybe Piece)
+        withPiecesRemoved =
+            board
+                |> Array2d.indexedMap
+                    (\x y piece ->
+                        if Set.member ( x, y ) removedPieces then
+                            Nothing
+
+                        else
+                            Just piece
+                    )
+    in
+    withPiecesRemoved
+        |> Array2d.transpose
+        |> Array.map
+            (\col ->
+                let
+                    filteredCol =
+                        Array.filter (\m -> m /= Nothing) col
+
+                    remainder =
+                        Array.repeat (colLength - Array.length filteredCol) Nothing
+                in
+                Array.append remainder filteredCol
+            )
+        |> Array2d.transpose

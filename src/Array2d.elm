@@ -5,9 +5,14 @@ module Array2d exposing
     , get
     , indexedMap
     , map
+    , set
+    , size
+    , toList
+    , transpose
     )
 
 import Array exposing (Array)
+import List.Extra
 
 
 type alias Array2d a =
@@ -36,6 +41,50 @@ fromList =
         >> Array.fromList
 
 
+toList : Array2d a -> List (List a)
+toList =
+    Array.map Array.toList
+        >> Array.toList
+
+
 empty : Array2d a
 empty =
     Array.empty
+
+
+set : Int -> Int -> a -> Array2d a -> Array2d a
+set x y a arr =
+    case Array.get y arr of
+        Just row ->
+            let
+                newRow =
+                    Array.set x a row
+            in
+            Array.set y newRow arr
+
+        Nothing ->
+            arr
+
+
+size : Array2d a -> ( Int, Int )
+size arr =
+    let
+        width =
+            case Array.get 0 arr of
+                Just row ->
+                    Array.length row
+
+                Nothing ->
+                    0
+
+        height =
+            Array.length arr
+    in
+    ( width, height )
+
+
+transpose : Array2d a -> Array2d a
+transpose =
+    toList
+        >> List.Extra.transpose
+        >> fromList
