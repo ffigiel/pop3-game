@@ -7,6 +7,7 @@ import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import Random
+import Set exposing (Set)
 
 
 
@@ -33,7 +34,8 @@ type alias Flags =
 
 type alias Model =
     { board : Board
-    , debug : String
+    , score : Int
+    , removingPieces : Set ( Int, Int )
     }
 
 
@@ -42,7 +44,8 @@ init _ =
     let
         model =
             { board = Array.empty
-            , debug = ""
+            , score = 0
+            , removingPieces = Set.empty
             }
 
         cmd =
@@ -68,21 +71,19 @@ update msg model =
 
         ClickedPiece piece ( x, y ) ->
             let
-                debug =
-                    "Clicked "
-                        ++ String.fromInt x
-                        ++ ", "
-                        ++ String.fromInt y
-                        ++ "\n"
-                        ++ "Found "
-                        ++ String.fromInt (List.length results)
-                        ++ " matches: "
-                        ++ Debug.toString results
-
-                results =
+                matches =
                     Board.chainOfSameColor piece ( x, y ) model.board
             in
-            ( { model | debug = debug }, Cmd.none )
+            if Set.size matches < 3 then
+                ( model, Cmd.none )
+
+            else
+                ( { model
+                    | score = Set.size matches
+                    , removingPieces = matches
+                  }
+                , Cmd.none
+                )
 
 
 subscriptions : Model -> Sub Msg
@@ -94,7 +95,6 @@ view : Model -> Html Msg
 view model =
     H.div []
         [ viewBoard model
-        , H.pre [] [ H.text model.debug ]
         ]
 
 
@@ -105,7 +105,10 @@ viewBoard model =
         viewRow y row =
             H.div []
                 (Array.toList row
-                    |> List.indexedMap (viewPiece y)
+                    |> List.indexedMap
+                        (\x piece ->
+                            viewPiece x y (Set.member ( x, y ) model.removingPieces) piece
+                        )
                 )
     in
     H.div [ HA.class "gameBoard" ]
@@ -114,8 +117,8 @@ viewBoard model =
         )
 
 
-viewPiece : Int -> Int -> Piece -> Html Msg
-viewPiece y x piece =
+viewPiece : Int -> Int -> Bool -> Piece -> Html Msg
+viewPiece x y isRemoving piece =
     let
         colorClass =
             case piece of
@@ -134,6 +137,7 @@ viewPiece y x piece =
     H.button
         [ HA.class "gamePiece"
         , HA.class colorClass
+        , HA.classList [ ( "-removing", isRemoving ) ]
         , HE.onClick <| ClickedPiece piece ( x, y )
         ]
         []

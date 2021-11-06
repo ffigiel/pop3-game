@@ -2,6 +2,7 @@ module Board exposing (Board, Piece(..), chainOfSameColor, generator)
 
 import Array2d exposing (Array2d)
 import Random exposing (Generator)
+import Set exposing (Set)
 
 
 size : { width : Int, height : Int }
@@ -41,7 +42,7 @@ type alias BoardSearch =
     Array2d { piece : Piece, visited : Bool }
 
 
-chainOfSameColor : Piece -> ( Int, Int ) -> Board -> List ( Int, Int )
+chainOfSameColor : Piece -> ( Int, Int ) -> Board -> Set ( Int, Int )
 chainOfSameColor piece ( x, y ) board =
     let
         boardSearch : BoardSearch
@@ -55,7 +56,7 @@ chainOfSameColor piece ( x, y ) board =
                     )
 
         ( _, result ) =
-            chainOfSameColorHelper piece ( x, y ) ( boardSearch, [] )
+            chainOfSameColorHelper piece ( x, y ) ( boardSearch, Set.empty )
     in
     result
 
@@ -63,8 +64,8 @@ chainOfSameColor piece ( x, y ) board =
 chainOfSameColorHelper :
     Piece
     -> ( Int, Int )
-    -> ( BoardSearch, List ( Int, Int ) )
-    -> ( BoardSearch, List ( Int, Int ) )
+    -> ( BoardSearch, Set ( Int, Int ) )
+    -> ( BoardSearch, Set ( Int, Int ) )
 chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
     let
         found =
@@ -85,7 +86,7 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
                     )
     in
     if found then
-        ( newBoardSearch, ( x, y ) :: results )
+        ( newBoardSearch, Set.insert ( x, y ) results )
             |> chainOfSameColorHelper piece ( x + 1, y )
             |> chainOfSameColorHelper piece ( x - 1, y )
             |> chainOfSameColorHelper piece ( x, y + 1 )
