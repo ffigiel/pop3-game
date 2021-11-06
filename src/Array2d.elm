@@ -1,6 +1,7 @@
 module Array2d exposing
     ( Array2d
     , empty
+    , foldl
     , fromList
     , get
     , indexedMap
@@ -88,3 +89,8 @@ transpose =
     toList
         >> List.Extra.transpose
         >> fromList
+
+
+foldl : (a -> b -> b) -> b -> Array2d a -> b
+foldl acc =
+    Array.foldl (\row x -> Array.foldl acc x row)

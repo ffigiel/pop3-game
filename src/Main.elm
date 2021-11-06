@@ -37,6 +37,7 @@ type alias Flags =
 
 type alias Model =
     { board : Board
+    , piecesQueue : List Piece
     , score : Int
     , removedPieces : Set ( Int, Int )
     }
@@ -47,12 +48,20 @@ init _ =
     let
         model =
             { board = Array.empty
+            , piecesQueue = []
             , score = 0
             , removedPieces = Set.empty
             }
 
+        initGenerator =
+            Random.map2 (\board piecesQueue -> { board = board, piecesQueue = piecesQueue })
+                Board.generator
+                Board.piecesQueueGenerator
+
         cmd =
-            Random.generate GotBoard Board.generator
+            Cmd.batch
+                [ Random.generate Init initGenerator
+                ]
     in
     ( model, cmd )
 
@@ -62,16 +71,22 @@ init _ =
 
 
 type Msg
-    = GotBoard Board
+    = Init { board : Board, piecesQueue : List Piece }
     | ClickedPiece Piece ( Int, Int )
     | UpdateRemovedPieces
+    | GotPiecesQueue (List Piece)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotBoard board ->
-            ( { model | board = board }, Cmd.none )
+        Init { board, piecesQueue } ->
+            ( { model
+                | board = board
+                , piecesQueue = model.piecesQueue ++ piecesQueue
+              }
+            , Cmd.none
+            )
 
         ClickedPiece piece ( x, y ) ->
             let
@@ -91,17 +106,30 @@ update msg model =
 
         UpdateRemovedPieces ->
             let
-                newBoard =
-                    model.board
-                        |> Board.removePieces model.removedPieces
-                        |> Array2d.map (Maybe.withDefault Red)
+                ( newBoard, newPiecesQueue ) =
+                    Board.removePieces model.removedPieces
+                        model.piecesQueue
+                        model.board
             in
             ( { model
                 | board = newBoard
                 , removedPieces = Set.empty
+                , piecesQueue = newPiecesQueue
               }
-            , Cmd.none
+            , refillPiecesQueue newPiecesQueue
             )
+
+        GotPiecesQueue queue ->
+            ( { model | piecesQueue = model.piecesQueue ++ queue }, Cmd.none )
+
+
+refillPiecesQueue : List Piece -> Cmd Msg
+refillPiecesQueue queue =
+    if List.length queue < Board.queueSize then
+        Random.generate GotPiecesQueue Board.piecesQueueGenerator
+
+    else
+        Cmd.none
 
 
 subscriptions : Model -> Sub Msg

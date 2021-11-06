@@ -3,6 +3,8 @@ module Board exposing
     , Piece(..)
     , chainOfSameColor
     , generator
+    , piecesQueueGenerator
+    , queueSize
     , removePieces
     )
 
@@ -17,12 +19,27 @@ size =
     { width = 5, height = 8 }
 
 
+queueSize : Int
+queueSize =
+    size.width * size.height
+
+
 generator : Generator Board
 generator =
-    Random.uniform Red pieces
+    pieceGenerator
         |> Random.list size.width
         |> Random.list size.height
         |> Random.map Array2d.fromList
+
+
+piecesQueueGenerator : Generator (List Piece)
+piecesQueueGenerator =
+    Random.list queueSize pieceGenerator
+
+
+pieceGenerator : Generator Piece
+pieceGenerator =
+    Random.uniform Red pieces
 
 
 type alias Board =
@@ -103,8 +120,8 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
         ( newBoardSearch, results )
 
 
-removePieces : Set ( Int, Int ) -> Board -> Array2d (Maybe Piece)
-removePieces removedPieces board =
+removePieces : Set ( Int, Int ) -> List Piece -> Board -> ( Board, List Piece )
+removePieces removedPieces piecesQueue board =
     let
         ( _, colLength ) =
             Array2d.size board
@@ -120,18 +137,57 @@ removePieces removedPieces board =
                         else
                             Just piece
                     )
-    in
-    withPiecesRemoved
-        |> Array2d.transpose
-        |> Array.map
-            (\col ->
-                let
-                    filteredCol =
-                        Array.filter (\m -> m /= Nothing) col
 
-                    remainder =
-                        Array.repeat (colLength - Array.length filteredCol) Nothing
-                in
-                Array.append remainder filteredCol
-            )
-        |> Array2d.transpose
+        withPiecesShifted =
+            withPiecesRemoved
+                |> Array2d.transpose
+                |> Array.map
+                    (\col ->
+                        let
+                            filteredCol =
+                                Array.filter (\m -> m /= Nothing) col
+
+                            remainder =
+                                Array.repeat (colLength - Array.length filteredCol) Nothing
+                        in
+                        Array.append remainder filteredCol
+                    )
+                |> Array2d.transpose
+
+        blankCoords =
+            withPiecesShifted
+                |> Array2d.indexedMap
+                    (\x y p ->
+                        if p == Nothing then
+                            Just ( x, y )
+
+                        else
+                            Nothing
+                    )
+                |> Array2d.foldl
+                    (\el coords ->
+                        case el of
+                            Just xy ->
+                                xy :: coords
+
+                            Nothing ->
+                                coords
+                    )
+                    []
+
+        ( withNewPieces, newQueue ) =
+            List.foldl
+                (\( x, y ) ( b, q ) ->
+                    let
+                        newB =
+                            Array2d.set x y (List.head q) b
+
+                        newQ =
+                            List.drop 1 q
+                    in
+                    ( newB, newQ )
+                )
+                ( withPiecesShifted, piecesQueue )
+                blankCoords
+    in
+    ( Array2d.map (Maybe.withDefault Red) withNewPieces, newQueue )
