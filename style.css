@@ -1,0 +1,45 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+--red: #d1454c;
+--green: #469359;
+--blue: #5aa2e7;
+}
+
+.gameBoard {
+  margin: 1rem;
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+.gameBoard > * {
+  gap: 1rem;
+  display: flex;
+  flex-direction: row;
+}
+
+.gamePiece {
+  border-radius: 50%;
+  width: 5rem;
+  height: 5rem;
+}
+
+.gamePiece.-red {
+  background-color: var(--red);
+}
+
+.gamePiece.-green {
+  background-color: var(--green);
+}
+
+.gamePiece.-blue {
+  background-color: var(--blue);
+}
