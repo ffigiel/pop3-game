@@ -4,6 +4,7 @@ import Array exposing (Array)
 import Browser
 import Html as H exposing (Html)
 import Html.Attributes as HA
+import Html.Events as HE
 
 
 
@@ -38,6 +39,7 @@ type alias Flags =
 
 type alias Model =
     { board : Array2d Piece
+    , debug : String
     }
 
 
@@ -52,6 +54,7 @@ init _ =
     let
         model =
             { board = board
+            , debug = ""
             }
 
         board =
@@ -73,14 +76,18 @@ init _ =
 
 
 type Msg
-    = None
+    = ClickedPiece ( Int, Int )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        None ->
-            ( model, Cmd.none )
+        ClickedPiece ( x, y ) ->
+            let
+                debug =
+                    "Clicked " ++ String.fromInt x ++ ", " ++ String.fromInt y
+            in
+            ( { model | debug = debug }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -90,28 +97,45 @@ subscriptions _ =
 
 view : Model -> Html Msg
 view model =
+    H.div []
+        [ viewBoard model
+        , H.pre [] [ H.text model.debug ]
+        ]
+
+
+viewBoard : Model -> Html Msg
+viewBoard model =
     let
-        viewRow : Array Piece -> Html Msg
-        viewRow row =
+        viewRow : Int -> Array Piece -> Html Msg
+        viewRow y row =
             H.div []
                 (Array.toList row
-                    |> List.map viewPiece
+                    |> List.indexedMap (viewPiece y)
                 )
     in
     H.div [ HA.class "gameBoard" ]
         (Array.toList model.board
-            |> List.map viewRow
+            |> List.indexedMap viewRow
         )
 
 
-viewPiece : Piece -> Html Msg
-viewPiece piece =
-    case piece of
-        Red ->
-            H.div [ HA.class "gamePiece -red" ] []
+viewPiece : Int -> Int -> Piece -> Html Msg
+viewPiece y x piece =
+    let
+        colorClass =
+            case piece of
+                Red ->
+                    "-red"
 
-        Green ->
-            H.div [ HA.class "gamePiece -green" ] []
+                Green ->
+                    "-green"
 
-        Blue ->
-            H.div [ HA.class "gamePiece -blue" ] []
+                Blue ->
+                    "-blue"
+    in
+    H.button
+        [ HA.class "gamePiece"
+        , HA.class colorClass
+        , HE.onClick <| ClickedPiece ( y, x )
+        ]
+        []
