@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Array exposing (Array)
+import Board exposing (Board, Piece(..))
 import Browser
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -33,20 +34,6 @@ type alias Model =
     { board : Board
     , debug : String
     }
-
-
-type alias Board =
-    Array2d Piece
-
-
-type alias Array2d a =
-    Array (Array a)
-
-
-type Piece
-    = Red
-    | Green
-    | Blue
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -96,76 +83,9 @@ update msg model =
                         ++ Debug.toString results
 
                 results =
-                    neighborsOfSameColor piece ( x, y ) model.board
+                    Board.chainOfSameColor piece ( x, y ) model.board
             in
             ( { model | debug = debug }, Cmd.none )
-
-
-type alias BoardSearch =
-    Array2d { piece : Piece, visited : Bool }
-
-
-neighborsOfSameColor : Piece -> ( Int, Int ) -> Board -> List ( Int, Int )
-neighborsOfSameColor piece ( x, y ) board =
-    let
-        boardSearch : BoardSearch
-        boardSearch =
-            board
-                |> Array.map
-                    (\r ->
-                        r
-                            |> Array.map
-                                (\p ->
-                                    { piece = p
-                                    , visited = False
-                                    }
-                                )
-                    )
-
-        ( _, result ) =
-            neighborsOfSameColorHelper piece ( x, y ) ( boardSearch, [] )
-    in
-    result
-
-
-neighborsOfSameColorHelper :
-    Piece
-    -> ( Int, Int )
-    -> ( BoardSearch, List ( Int, Int ) )
-    -> ( BoardSearch, List ( Int, Int ) )
-neighborsOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
-    let
-        found =
-            boardSearch
-                |> Array.get y
-                |> Maybe.andThen (Array.get x)
-                |> Maybe.andThen (\t -> Just <| not t.visited && t.piece == piece)
-                |> Maybe.withDefault False
-
-        newBoardSearch =
-            boardSearch
-                |> Array.indexedMap
-                    (\ty row ->
-                        row
-                            |> Array.indexedMap
-                                (\tx t ->
-                                    if ty == y && tx == x then
-                                        { t | visited = True }
-
-                                    else
-                                        t
-                                )
-                    )
-    in
-    if found then
-        ( newBoardSearch, ( x, y ) :: results )
-            |> neighborsOfSameColorHelper piece ( x + 1, y )
-            |> neighborsOfSameColorHelper piece ( x - 1, y )
-            |> neighborsOfSameColorHelper piece ( x, y + 1 )
-            |> neighborsOfSameColorHelper piece ( x, y - 1 )
-
-    else
-        ( newBoardSearch, results )
 
 
 subscriptions : Model -> Sub Msg
