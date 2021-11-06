@@ -9,37 +9,37 @@ body {
 }
 
 :root {
---red: #d1454c;
---green: #469359;
---blue: #5aa2e7;
+  --red: #d1454c;
+  --green: #469359;
+  --blue: #5aa2e7;
+
+  --board-gap: 1rem;
+  --piece-size: 5rem;
 }
 
 .gameBoard {
-  margin: 1rem;
-  gap: 1rem;
+  margin: var(--board-gap);
+  gap: var(--board-gap);
   display: flex;
   flex-direction: column;
 }
 .gameBoard > * {
-  gap: 1rem;
+  gap: var(--board-gap);
   display: flex;
   flex-direction: row;
 }
 
 .gamePiece {
   border-radius: 50%;
-  width: 5rem;
-  height: 5rem;
+  width: var(--piece-size);
+  height: var(--piece-size);
 }
-
 .gamePiece.-red {
   background-color: var(--red);
 }
-
 .gamePiece.-green {
   background-color: var(--green);
 }
-
 .gamePiece.-blue {
   background-color: var(--blue);
 }
