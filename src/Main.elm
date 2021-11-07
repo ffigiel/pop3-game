@@ -58,17 +58,18 @@ init _ =
             , fallingPieces = Dict.empty
             }
 
-        initGenerator =
-            Random.map2 (\board piecesQueue -> { board = board, piecesQueue = piecesQueue })
-                Board.generator
-                Board.piecesQueueGenerator
-
         cmd =
-            Cmd.batch
-                [ Random.generate Init initGenerator
-                ]
+            generateBoardCmd
     in
     ( model, cmd )
+
+
+generateBoardCmd : Cmd Msg
+generateBoardCmd =
+    Random.map2 (\board piecesQueue -> { board = board, piecesQueue = piecesQueue })
+        Board.generator
+        Board.piecesQueueGenerator
+        |> Random.generate Init
 
 
 
@@ -80,6 +81,7 @@ type Msg
     | ClickedPiece Piece ( Int, Int )
     | GotPiecesQueue (List Piece)
     | RemoveAnimationState Int
+    | PlayAgainClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -90,7 +92,11 @@ update msg model =
                 | board = board
                 , piecesQueue = model.piecesQueue ++ piecesQueue
               }
-            , Cmd.none
+            , if Board.isGameOver board then
+                generateBoardCmd
+
+              else
+                Cmd.none
             )
 
         ClickedPiece piece ( x, y ) ->
@@ -139,6 +145,16 @@ update msg model =
                 -- player clicked during the transition and a new animation started playing
                 model
             , Cmd.none
+            )
+
+        PlayAgainClicked ->
+            ( { model
+                | score = 0
+                , isNewHighScore = False
+                , removedPieces = Dict.empty
+                , fallingPieces = Dict.empty
+              }
+            , generateBoardCmd
             )
 
 
@@ -310,6 +326,13 @@ viewGameOver { score, isNewHighScore } =
 
                   else
                     H.text <| "Score: " ++ String.fromInt score
+                ]
+            , H.p []
+                [ H.button
+                    [ HA.type_ "button"
+                    , HE.onClick PlayAgainClicked
+                    ]
+                    [ H.text "Play again?" ]
                 ]
             ]
         ]

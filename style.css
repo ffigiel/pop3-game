@@ -28,6 +28,10 @@ p {
 }
 
 button {
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  text-shadow: inherit;
   background: none;
   box-shadow: none;
   border: none;
