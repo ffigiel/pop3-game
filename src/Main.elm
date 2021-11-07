@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Array exposing (Array)
 import Board exposing (Board, Piece(..))
@@ -7,6 +7,7 @@ import Dict exposing (Dict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
+import Json.Decode as JD
 import Process
 import Random
 import Task
@@ -27,11 +28,18 @@ main =
 
 
 
+-- PORTS
+
+
+port saveHighScore : Int -> Cmd msg
+
+
+
 -- MODEL
 
 
 type alias Flags =
-    ()
+    JD.Value
 
 
 type alias Model =
@@ -46,17 +54,22 @@ type alias Model =
 
 
 init : Flags -> ( Model, Cmd Msg )
-init _ =
+init flags =
     let
         model =
             { board = Array.empty
             , piecesQueue = []
             , score = 0
-            , highScore = Nothing
+            , highScore = highScore
             , isNewHighScore = False
             , removedPieces = Dict.empty
             , fallingPieces = Dict.empty
             }
+
+        highScore =
+            JD.decodeValue (JD.field "highScore" JD.string) flags
+                |> Result.toMaybe
+                |> Maybe.andThen String.toInt
 
         cmd =
             generateBoardCmd
@@ -174,7 +187,14 @@ handleGameOver ( model, cmd ) =
             | highScore = Just highScore
             , isNewHighScore = isNewHighScore
           }
-        , cmd
+        , Cmd.batch
+            [ cmd
+            , if isNewHighScore then
+                saveHighScore highScore
+
+              else
+                Cmd.none
+            ]
         )
 
     else
