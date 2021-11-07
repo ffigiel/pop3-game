@@ -48,17 +48,19 @@ type alias Board =
 
 type Piece
     = Red
+    | Yellow
     | Green
     | Blue
-    | Yellow
+    | Purple
 
 
 pieces : List Piece
 pieces =
     [ Red
+    , Yellow
     , Green
     , Blue
-    , Yellow
+    , Purple
     ]
 
 

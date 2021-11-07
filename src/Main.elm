@@ -174,14 +174,17 @@ viewPiece x y isRemoving piece =
                 Red ->
                     "-red"
 
+                Yellow ->
+                    "-yellow"
+
                 Green ->
                     "-green"
 
                 Blue ->
                     "-blue"
 
-                Yellow ->
-                    "-yellow"
+                Purple ->
+                    "-purple"
     in
     H.button
         [ HA.class "gamePiece"

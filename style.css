@@ -23,9 +23,10 @@ button {
 
 :root {
   --red: #d1454c;
-  --green: #469359;
-  --blue: #5aa2e7;
-  --yellow: #dcb04a;
+  --yellow: #dfb247;
+  --green: #459358;
+  --blue: #5caedc;
+  --purple: #9f89ea;
 
   --board-gap: 1rem;
   --piece-size: 5rem;
@@ -56,6 +57,7 @@ html {
 }
 
 .gamePiece {
+  animation: 500ms gamePieceInsert;
   border-radius: 100%;
   width: var(--piece-size);
   height: var(--piece-size);
@@ -68,19 +70,33 @@ html {
 .gamePiece.-red {
   background-color: var(--red);
 }
+.gamePiece.-yellow {
+  background-color: var(--yellow);
+}
 .gamePiece.-green {
   background-color: var(--green);
 }
 .gamePiece.-blue {
   background-color: var(--blue);
 }
-.gamePiece.-yellow {
-  background-color: var(--yellow);
+.gamePiece.-purple {
+  background-color: var(--purple);
 }
 .gamePiece.-removing {
   pointer-events: none;
   animation: 500ms gamePieceRemoving;
   animation-fill-mode: both;
+}
+
+@keyframes gamePieceInsert {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes gamePieceRemoving {
