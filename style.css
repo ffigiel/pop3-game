@@ -47,8 +47,14 @@ html {
 
 /* Game */
 
-.gameBoard {
+.gameContainer {
   margin: var(--board-gap);
+}
+.gameContainer > :not(:last-child) {
+  margin-bottom: var(--board-gap);
+}
+
+.gameBoard {
   gap: var(--board-gap);
   display: flex;
   flex-direction: column;
@@ -61,6 +67,7 @@ html {
 }
 
 .gamePiece {
+  touch-action: none;
   animation: 500ms gamePieceInsert;
   border-radius: 100%;
   width: var(--piece-size);
@@ -94,8 +101,8 @@ html {
 
 @keyframes gamePieceInsert {
   from {
-    opacity: 0;
-    transform: scale(0);
+    opacity: 0.5;
+    transform: scale(50%);
   }
   to {
     opacity: 1;
@@ -113,20 +120,24 @@ html {
   }
 }
 
+.gameScore {
+  font-size: 2rem;
+}
+
 .gameOverScreen {
   position: absolute;
   inset: 0;
   display: grid;
   font-size: 2rem;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: #3333;
   place-items: center;
-  animation: 8000ms gameOverScreenInsert;
+  animation: 800ms gameOverScreenInsert;
   animation-fill-mode: both;
 }
 .gameOverScreen_text {
   user-select: none;
   text-align: center;
-  text-shadow: 0em 0em 0.1em #000;
+  text-shadow: 0 0.1em 0.05em #333;
   animation: 800ms gameOverScreen_textInsert;
   animation-fill-mode: both;
 }
@@ -137,7 +148,7 @@ html {
 
 @keyframes gameOverScreenInsert {
   to {
-    backdrop-filter: blur(0.2rem) grayscale(60%);
+    backdrop-filter: grayscale(60%);
   }
 }
 

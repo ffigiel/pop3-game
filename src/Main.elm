@@ -101,7 +101,7 @@ update msg model =
                     | score = model.score + Set.size chain
                     , removedPieces = chain
                   }
-                , Task.perform (\_ -> UpdateRemovedPieces) (Process.sleep 500)
+                , Task.perform (\_ -> UpdateRemovedPieces) (Process.sleep 200)
                 )
 
         UpdateRemovedPieces ->
@@ -139,26 +139,26 @@ subscriptions _ =
 
 view : Model -> Html Msg
 view model =
-    H.div []
-        [ viewBoard model
-        , if Board.isGameOver model.board then
-            viewGameOver model.score
+    let
+        isGameOver =
+            Board.isGameOver model.board
+    in
+    H.div [ HA.class "gameContainer" ]
+        [ H.div [ HA.style "position" "relative" ]
+            [ viewBoard model
+            , if isGameOver then
+                viewGameOver model.score
+
+              else
+                H.text ""
+            ]
+        , if isGameOver then
+            H.text ""
 
           else
-            H.text ""
-        , H.p []
-            [ H.text <| String.fromInt model.score
-            ]
-        ]
-
-
-viewGameOver : Int -> Html Msg
-viewGameOver score =
-    H.div [ HA.class "gameOverScreen" ]
-        [ H.div [ HA.class "gameOverScreen_text" ]
-            [ H.p [ HA.class "gameOverScreen_title" ] [ H.text "Game over" ]
-            , H.p [] [ H.text <| "Score: " ++ String.fromInt score ]
-            ]
+            H.p [ HA.class "gameScore" ]
+                [ H.text <| "Score: " ++ String.fromInt model.score
+                ]
         ]
 
 
@@ -208,3 +208,13 @@ viewPiece x y isRemoving piece =
         , HE.onClick <| ClickedPiece piece ( x, y )
         ]
         []
+
+
+viewGameOver : Int -> Html Msg
+viewGameOver score =
+    H.div [ HA.class "gameOverScreen" ]
+        [ H.div [ HA.class "gameOverScreen_text" ]
+            [ H.p [ HA.class "gameOverScreen_title" ] [ H.text "Game over" ]
+            , H.p [] [ H.text <| "Score: " ++ String.fromInt score ]
+            ]
+        ]
