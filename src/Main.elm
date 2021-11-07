@@ -38,6 +38,8 @@ type alias Model =
     { board : Board
     , piecesQueue : List Piece
     , score : Int
+    , highScore : Maybe Int
+    , isNewHighScore : Bool
     , removedPieces : Dict ( Int, Int ) Piece
     , fallingPieces : Dict ( Int, Int ) Int
     }
@@ -50,6 +52,8 @@ init _ =
             { board = Array.empty
             , piecesQueue = []
             , score = 0
+            , highScore = Nothing
+            , isNewHighScore = False
             , removedPieces = Dict.empty
             , fallingPieces = Dict.empty
             }
@@ -103,9 +107,12 @@ update msg model =
                         Board.removePieces chain
                             model.piecesQueue
                             model.board
+
+                    newScore =
+                        model.score + Dict.size chain
                 in
                 ( { model
-                    | score = model.score + Dict.size chain
+                    | score = newScore
                     , removedPieces = chain
                     , board = newBoard
                     , fallingPieces = fallingPieces
@@ -116,6 +123,7 @@ update msg model =
                     , Task.perform (\_ -> RemoveAnimationState model.score) (Process.sleep 5000)
                     ]
                 )
+                    |> handleGameOver
 
         GotPiecesQueue queue ->
             ( { model | piecesQueue = model.piecesQueue ++ queue }, Cmd.none )
@@ -132,6 +140,29 @@ update msg model =
                 model
             , Cmd.none
             )
+
+
+handleGameOver : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+handleGameOver ( model, cmd ) =
+    if Board.isGameOver model.board then
+        let
+            ( highScore, isNewHighScore ) =
+                case model.highScore of
+                    Nothing ->
+                        ( model.score, True )
+
+                    Just hs ->
+                        ( max hs model.score, model.score > hs )
+        in
+        ( { model
+            | highScore = Just highScore
+            , isNewHighScore = isNewHighScore
+          }
+        , cmd
+        )
+
+    else
+        ( model, cmd )
 
 
 refillPiecesQueue : List Piece -> Cmd Msg
@@ -159,7 +190,7 @@ view model =
             [ viewBoard model
             , viewFallingPieces model
             , if isGameOver then
-                viewGameOver model.score
+                viewGameOver model
 
               else
                 H.text ""
@@ -168,9 +199,7 @@ view model =
             H.text ""
 
           else
-            H.p [ HA.class "gameScore" ]
-                [ H.text <| "Score: " ++ String.fromInt model.score
-                ]
+            viewScore model
         ]
 
 
@@ -270,11 +299,31 @@ viewPiecePlaceholder =
     H.button [ HA.class "gamePiece -placeholder" ] []
 
 
-viewGameOver : Int -> Html Msg
-viewGameOver score =
+viewGameOver : { a | score : Int, isNewHighScore : Bool } -> Html Msg
+viewGameOver { score, isNewHighScore } =
     H.div [ HA.class "gameOverScreen" ]
         [ H.div [ HA.class "gameOverScreen_text" ]
             [ H.p [ HA.class "gameOverScreen_title" ] [ H.text "Game over" ]
-            , H.p [] [ H.text <| "Score: " ++ String.fromInt score ]
+            , H.p []
+                [ if isNewHighScore then
+                    H.text <| "New high score! " ++ String.fromInt score
+
+                  else
+                    H.text <| "Score: " ++ String.fromInt score
+                ]
             ]
+        ]
+
+
+viewScore : { a | score : Int, highScore : Maybe Int } -> Html Msg
+viewScore { score, highScore } =
+    H.p [ HA.class "gameScore" ]
+        [ H.text <| "Score: " ++ String.fromInt score
+        , H.br [] []
+        , case highScore of
+            Just hs ->
+                H.text <| "High score: " ++ String.fromInt (max hs score)
+
+            Nothing ->
+                H.text ""
         ]
