@@ -14,7 +14,6 @@ import Array
 import Array2d exposing (Array2d)
 import Dict exposing (Dict)
 import Random exposing (Generator)
-import Set exposing (Set)
 
 
 minChain : Int
@@ -76,7 +75,7 @@ type alias BoardSearch =
     Array2d { piece : Piece, visited : Bool }
 
 
-chainOfSameColor : Piece -> ( Int, Int ) -> Board -> Set ( Int, Int )
+chainOfSameColor : Piece -> ( Int, Int ) -> Board -> Dict ( Int, Int ) Piece
 chainOfSameColor piece ( x, y ) board =
     let
         boardSearch : BoardSearch
@@ -90,7 +89,7 @@ chainOfSameColor piece ( x, y ) board =
                     )
 
         ( _, result ) =
-            chainOfSameColorHelper piece ( x, y ) ( boardSearch, Set.empty )
+            chainOfSameColorHelper piece ( x, y ) ( boardSearch, Dict.empty )
     in
     result
 
@@ -98,15 +97,21 @@ chainOfSameColor piece ( x, y ) board =
 chainOfSameColorHelper :
     Piece
     -> ( Int, Int )
-    -> ( BoardSearch, Set ( Int, Int ) )
-    -> ( BoardSearch, Set ( Int, Int ) )
+    -> ( BoardSearch, Dict ( Int, Int ) Piece )
+    -> ( BoardSearch, Dict ( Int, Int ) Piece )
 chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
     let
-        found =
+        match =
             boardSearch
                 |> Array2d.get x y
-                |> Maybe.andThen (\t -> Just <| not t.visited && t.piece == piece)
-                |> Maybe.withDefault False
+                |> Maybe.andThen
+                    (\t ->
+                        if not t.visited && t.piece == piece then
+                            Just t.piece
+
+                        else
+                            Nothing
+                    )
 
         newBoardSearch =
             boardSearch
@@ -119,18 +124,19 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
                             t
                     )
     in
-    if found then
-        ( newBoardSearch, Set.insert ( x, y ) results )
-            |> chainOfSameColorHelper piece ( x + 1, y )
-            |> chainOfSameColorHelper piece ( x - 1, y )
-            |> chainOfSameColorHelper piece ( x, y + 1 )
-            |> chainOfSameColorHelper piece ( x, y - 1 )
+    case match of
+        Just p ->
+            ( newBoardSearch, Dict.insert ( x, y ) p results )
+                |> chainOfSameColorHelper piece ( x + 1, y )
+                |> chainOfSameColorHelper piece ( x - 1, y )
+                |> chainOfSameColorHelper piece ( x, y + 1 )
+                |> chainOfSameColorHelper piece ( x, y - 1 )
 
-    else
-        ( newBoardSearch, results )
+        Nothing ->
+            ( newBoardSearch, results )
 
 
-removePieces : Set ( Int, Int ) -> List Piece -> Board -> ( Board, List Piece, Dict ( Int, Int ) Int )
+removePieces : Dict ( Int, Int ) Piece -> List Piece -> Board -> ( Board, List Piece, Dict ( Int, Int ) Int )
 removePieces removedPieces piecesQueue board =
     let
         ( _, colLength ) =
@@ -141,7 +147,7 @@ removePieces removedPieces piecesQueue board =
             board
                 |> Array2d.indexedMap
                     (\x y piece ->
-                        if Set.member ( x, y ) removedPieces then
+                        if Dict.member ( x, y ) removedPieces then
                             Nothing
 
                         else
@@ -267,5 +273,5 @@ isGameOver board =
                     chain =
                         chainOfSameColor piece ( x, y ) board
                 in
-                Set.size chain < minChain
+                Dict.size chain < minChain
             )

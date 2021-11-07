@@ -60,6 +60,12 @@ html {
   flex-direction: column;
   align-items: center;
 }
+.gameBoard.-falling {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  z-index: -1;
+}
 .gameBoard > * {
   gap: var(--board-gap);
   display: flex;
@@ -77,6 +83,10 @@ html {
 .gamePiece:hover {
   transform: scale(110%);
 }
+.gamePiece.-placeholder {
+  pointer-events: none;
+  opacity: 0;
+}
 .gamePiece.-red {
   background-color: var(--red);
 }
@@ -92,15 +102,26 @@ html {
 .gamePiece.-purple {
   background-color: var(--purple);
 }
+
 .gamePiece.-removing {
   pointer-events: none;
   animation: 500ms gamePieceRemoving;
+  animation-timing-function: ease-out;
   animation-fill-mode: both;
+}
+@keyframes gamePieceRemoving {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0);
+  }
 }
 
 .gamePiece.-falling {
   animation-duration: 500ms;
-  animation-timing-function: ease-in-out;
+  animation-timing-function: ease;
 }
 .gamePiece.-fallingFrom1 { animation-name: gamePieceFallingFrom1; }
 @keyframes gamePieceFallingFrom1 {
@@ -150,16 +171,6 @@ html {
     transform: translateY(calc(-7 * (var(--board-gap) + var(--piece-size))));
   }
   to { transform: none; }
-}
-
-@keyframes gamePieceRemoving {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-    transform: scale(0);
-  }
 }
 
 .gameScore {

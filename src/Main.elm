@@ -9,7 +9,6 @@ import Html.Attributes as HA
 import Html.Events as HE
 import Process
 import Random
-import Set exposing (Set)
 import Task
 
 
@@ -39,7 +38,7 @@ type alias Model =
     { board : Board
     , piecesQueue : List Piece
     , score : Int
-    , removedPieces : Set ( Int, Int )
+    , removedPieces : Dict ( Int, Int ) Piece
     , fallingPieces : Dict ( Int, Int ) Int
     }
 
@@ -51,7 +50,7 @@ init _ =
             { board = Array.empty
             , piecesQueue = []
             , score = 0
-            , removedPieces = Set.empty
+            , removedPieces = Dict.empty
             , fallingPieces = Dict.empty
             }
 
@@ -75,9 +74,8 @@ init _ =
 type Msg
     = Init { board : Board, piecesQueue : List Piece }
     | ClickedPiece Piece ( Int, Int )
-    | UpdateRemovedPieces
     | GotPiecesQueue (List Piece)
-    | SkipFallingPieces
+    | RemoveAnimationState Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -96,40 +94,44 @@ update msg model =
                 chain =
                     Board.chainOfSameColor piece ( x, y ) model.board
             in
-            if Set.size chain < Board.minChain then
+            if Dict.size chain < Board.minChain then
                 ( model, Cmd.none )
 
             else
+                let
+                    ( newBoard, newPiecesQueue, fallingPieces ) =
+                        Board.removePieces chain
+                            model.piecesQueue
+                            model.board
+                in
                 ( { model
-                    | score = model.score + Set.size chain
+                    | score = model.score + Dict.size chain
                     , removedPieces = chain
+                    , board = newBoard
+                    , fallingPieces = fallingPieces
+                    , piecesQueue = newPiecesQueue
                   }
-                , Task.perform (\_ -> UpdateRemovedPieces) (Process.sleep 500)
+                , Cmd.batch
+                    [ refillPiecesQueue newPiecesQueue
+                    , Task.perform (\_ -> RemoveAnimationState model.score) (Process.sleep 5000)
+                    ]
                 )
 
-        UpdateRemovedPieces ->
-            let
-                ( newBoard, newPiecesQueue, fallingPieces ) =
-                    Board.removePieces model.removedPieces
-                        model.piecesQueue
-                        model.board
-            in
-            ( { model
-                | board = newBoard
-                , removedPieces = Set.empty
-                , fallingPieces = fallingPieces
-                , piecesQueue = newPiecesQueue
-              }
-            , refillPiecesQueue newPiecesQueue
-            )
-
         GotPiecesQueue queue ->
-            ( { model | piecesQueue = model.piecesQueue ++ queue }
-            , Task.perform (\_ -> SkipFallingPieces) (Process.sleep 500)
-            )
+            ( { model | piecesQueue = model.piecesQueue ++ queue }, Cmd.none )
 
-        SkipFallingPieces ->
-            ( { model | fallingPieces = Dict.empty }, Cmd.none )
+        RemoveAnimationState score ->
+            ( if score == model.score then
+                { model
+                    | removedPieces = Dict.empty
+                    , fallingPieces = Dict.empty
+                }
+
+              else
+                -- player clicked during the transition and a new animation started playing
+                model
+            , Cmd.none
+            )
 
 
 refillPiecesQueue : List Piece -> Cmd Msg
@@ -155,6 +157,7 @@ view model =
     H.div [ HA.class "gameContainer" ]
         [ H.div [ HA.style "position" "relative" ]
             [ viewBoard model
+            , viewFallingPieces model
             , if isGameOver then
                 viewGameOver model.score
 
@@ -184,7 +187,7 @@ viewBoard model =
                                 { x = x
                                 , y = y
                                 , piece = piece
-                                , isRemoving = Set.member ( x, y ) model.removedPieces
+                                , isRemoving = False
                                 , fallingFrom =
                                     Dict.get ( x, y ) model.fallingPieces
                                         |> Maybe.withDefault 0
@@ -193,6 +196,36 @@ viewBoard model =
                 )
     in
     H.div [ HA.class "gameBoard" ]
+        (Array.toList model.board
+            |> List.indexedMap viewRow
+        )
+
+
+viewFallingPieces : Model -> Html Msg
+viewFallingPieces model =
+    let
+        viewRow : Int -> Array Piece -> Html Msg
+        viewRow y row =
+            H.div []
+                (Array.toList row
+                    |> List.indexedMap
+                        (\x _ ->
+                            case Dict.get ( x, y ) model.removedPieces of
+                                Just p ->
+                                    viewPiece
+                                        { x = x
+                                        , y = y
+                                        , piece = p
+                                        , isRemoving = True
+                                        , fallingFrom = 0
+                                        }
+
+                                Nothing ->
+                                    viewPiecePlaceholder
+                        )
+                )
+    in
+    H.div [ HA.class "gameBoard -falling" ]
         (Array.toList model.board
             |> List.indexedMap viewRow
         )
@@ -227,8 +260,14 @@ viewPiece { x, y, piece, isRemoving, fallingFrom } =
             , ( "-fallingFrom" ++ String.fromInt fallingFrom, fallingFrom > 0 )
             ]
         , HE.onClick <| ClickedPiece piece ( x, y )
+        , HA.type_ "button"
         ]
         []
+
+
+viewPiecePlaceholder : Html Msg
+viewPiecePlaceholder =
+    H.button [ HA.class "gamePiece -placeholder" ] []
 
 
 viewGameOver : Int -> Html Msg
