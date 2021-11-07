@@ -68,7 +68,6 @@ html {
 
 .gamePiece {
   touch-action: none;
-  animation: 500ms gamePieceInsert;
   border-radius: 100%;
   width: var(--piece-size);
   height: var(--piece-size);
@@ -99,15 +98,58 @@ html {
   animation-fill-mode: both;
 }
 
-@keyframes gamePieceInsert {
+.gamePiece.-falling {
+  animation-duration: 500ms;
+  animation-timing-function: ease-in-out;
+}
+.gamePiece.-fallingFrom1 { animation-name: gamePieceFallingFrom1; }
+@keyframes gamePieceFallingFrom1 {
   from {
-    opacity: 0.5;
-    transform: scale(50%);
+    transform: translateY(calc(-1 * (var(--board-gap) + var(--piece-size))));
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  to { transform: none; }
+}
+.gamePiece.-fallingFrom2 { animation-name: gamePieceFallingFrom2; }
+@keyframes gamePieceFallingFrom2 {
+  from {
+    transform: translateY(calc(-2 * (var(--board-gap) + var(--piece-size))));
   }
+  to { transform: none; }
+}
+.gamePiece.-fallingFrom3 { animation-name: gamePieceFallingFrom3; }
+@keyframes gamePieceFallingFrom3 {
+  from {
+    transform: translateY(calc(-3 * (var(--board-gap) + var(--piece-size))));
+  }
+  to { transform: none; }
+}
+.gamePiece.-fallingFrom4 { animation-name: gamePieceFallingFrom4; }
+@keyframes gamePieceFallingFrom4 {
+  from {
+    transform: translateY(calc(-4 * (var(--board-gap) + var(--piece-size))));
+  }
+  to { transform: none; }
+}
+.gamePiece.-fallingFrom5 { animation-name: gamePieceFallingFrom5; }
+@keyframes gamePieceFallingFrom5 {
+  from {
+    transform: translateY(calc(-5 * (var(--board-gap) + var(--piece-size))));
+  }
+  to { transform: none; }
+}
+.gamePiece.-fallingFrom6 { animation-name: gamePieceFallingFrom6; }
+@keyframes gamePieceFallingFrom6 {
+  from {
+    transform: translateY(calc(-6 * (var(--board-gap) + var(--piece-size))));
+  }
+  to { transform: none; }
+}
+.gamePiece.-fallingFrom7 { animation-name: gamePieceFallingFrom7; }
+@keyframes gamePieceFallingFrom7 {
+  from {
+    transform: translateY(calc(-7 * (var(--board-gap) + var(--piece-size))));
+  }
+  to { transform: none; }
 }
 
 @keyframes gamePieceRemoving {

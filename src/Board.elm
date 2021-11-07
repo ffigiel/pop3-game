@@ -12,6 +12,7 @@ module Board exposing
 
 import Array
 import Array2d exposing (Array2d)
+import Dict exposing (Dict)
 import Random exposing (Generator)
 import Set exposing (Set)
 
@@ -129,7 +130,7 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
         ( newBoardSearch, results )
 
 
-removePieces : Set ( Int, Int ) -> List Piece -> Board -> ( Board, List Piece )
+removePieces : Set ( Int, Int ) -> List Piece -> Board -> ( Board, List Piece, Dict ( Int, Int ) Int )
 removePieces removedPieces piecesQueue board =
     let
         ( _, colLength ) =
@@ -147,21 +148,73 @@ removePieces removedPieces piecesQueue board =
                             Just piece
                     )
 
-        withPiecesShifted =
-            withPiecesRemoved
-                |> Array2d.transpose
-                |> Array.map
-                    (\col ->
-                        let
-                            filteredCol =
-                                Array.filter (\m -> m /= Nothing) col
+        findGaps : List (Maybe a) -> List Int
+        findGaps =
+            -- given a board column, calculate from what distance the pieces will fall
+            -- should return
+            -- [x, _, _, x, _] becomes
+            -- [0, 2, 2, 3, 3]
+            --  ^-bottom row    ^-top row
+            List.foldl
+                (\el ( results, counter ) ->
+                    case el of
+                        Just _ ->
+                            ( counter :: results, counter )
 
-                            remainder =
-                                Array.repeat (colLength - Array.length filteredCol) Nothing
-                        in
-                        Array.append remainder filteredCol
-                    )
-                |> Array2d.transpose
+                        Nothing ->
+                            ( results, counter + 1 )
+                )
+                ( [], 0 )
+                >> (\( results, counter ) ->
+                        List.repeat counter counter ++ results
+                   )
+                >> List.reverse
+
+        ( withPiecesShifted, fallingPieces ) =
+            let
+                cols =
+                    Array2d.transpose withPiecesRemoved
+
+                shifted =
+                    cols
+                        |> Array.map
+                            (\col ->
+                                let
+                                    filteredCol =
+                                        Array.filter (\m -> m /= Nothing) col
+
+                                    remainder =
+                                        Array.repeat (colLength - Array.length filteredCol) Nothing
+                                in
+                                Array.append remainder filteredCol
+                            )
+                        |> Array2d.transpose
+
+                ( _, falling ) =
+                    cols
+                        |> Array.foldl
+                            (\col ( x, f ) ->
+                                col
+                                    |> Array.toList
+                                    |> List.reverse
+                                    |> findGaps
+                                    |> List.reverse
+                                    |> List.foldl
+                                        (\n ( y, f2 ) ->
+                                            ( y + 1
+                                            , if n == 0 then
+                                                f2
+
+                                              else
+                                                ( ( x, y ), n ) :: f2
+                                            )
+                                        )
+                                        ( 0, f )
+                                    |> Tuple.mapFirst (always (x + 1))
+                            )
+                            ( 0, [] )
+            in
+            ( shifted, falling )
 
         blankCoords =
             withPiecesShifted
@@ -199,7 +252,7 @@ removePieces removedPieces piecesQueue board =
                 ( withPiecesShifted, piecesQueue )
                 blankCoords
     in
-    ( Array2d.map (Maybe.withDefault Red) withNewPieces, newQueue )
+    ( Array2d.map (Maybe.withDefault Red) withNewPieces, newQueue, Dict.fromList fallingPieces )
 
 
 isGameOver : Board -> Bool

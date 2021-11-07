@@ -1,9 +1,9 @@
 module Main exposing (main)
 
 import Array exposing (Array)
-import Array2d
 import Board exposing (Board, Piece(..))
 import Browser
+import Dict exposing (Dict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -40,6 +40,7 @@ type alias Model =
     , piecesQueue : List Piece
     , score : Int
     , removedPieces : Set ( Int, Int )
+    , fallingPieces : Dict ( Int, Int ) Int
     }
 
 
@@ -51,6 +52,7 @@ init _ =
             , piecesQueue = []
             , score = 0
             , removedPieces = Set.empty
+            , fallingPieces = Dict.empty
             }
 
         initGenerator =
@@ -75,6 +77,7 @@ type Msg
     | ClickedPiece Piece ( Int, Int )
     | UpdateRemovedPieces
     | GotPiecesQueue (List Piece)
+    | SkipFallingPieces
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -101,12 +104,12 @@ update msg model =
                     | score = model.score + Set.size chain
                     , removedPieces = chain
                   }
-                , Task.perform (\_ -> UpdateRemovedPieces) (Process.sleep 200)
+                , Task.perform (\_ -> UpdateRemovedPieces) (Process.sleep 500)
                 )
 
         UpdateRemovedPieces ->
             let
-                ( newBoard, newPiecesQueue ) =
+                ( newBoard, newPiecesQueue, fallingPieces ) =
                     Board.removePieces model.removedPieces
                         model.piecesQueue
                         model.board
@@ -114,13 +117,19 @@ update msg model =
             ( { model
                 | board = newBoard
                 , removedPieces = Set.empty
+                , fallingPieces = fallingPieces
                 , piecesQueue = newPiecesQueue
               }
             , refillPiecesQueue newPiecesQueue
             )
 
         GotPiecesQueue queue ->
-            ( { model | piecesQueue = model.piecesQueue ++ queue }, Cmd.none )
+            ( { model | piecesQueue = model.piecesQueue ++ queue }
+            , Task.perform (\_ -> SkipFallingPieces) (Process.sleep 500)
+            )
+
+        SkipFallingPieces ->
+            ( { model | fallingPieces = Dict.empty }, Cmd.none )
 
 
 refillPiecesQueue : List Piece -> Cmd Msg
@@ -171,7 +180,15 @@ viewBoard model =
                 (Array.toList row
                     |> List.indexedMap
                         (\x piece ->
-                            viewPiece x y (Set.member ( x, y ) model.removedPieces) piece
+                            viewPiece
+                                { x = x
+                                , y = y
+                                , piece = piece
+                                , isRemoving = Set.member ( x, y ) model.removedPieces
+                                , fallingFrom =
+                                    Dict.get ( x, y ) model.fallingPieces
+                                        |> Maybe.withDefault 0
+                                }
                         )
                 )
     in
@@ -181,8 +198,8 @@ viewBoard model =
         )
 
 
-viewPiece : Int -> Int -> Bool -> Piece -> Html Msg
-viewPiece x y isRemoving piece =
+viewPiece : { x : Int, y : Int, piece : Piece, isRemoving : Bool, fallingFrom : Int } -> Html Msg
+viewPiece { x, y, piece, isRemoving, fallingFrom } =
     let
         colorClass =
             case piece of
@@ -204,7 +221,11 @@ viewPiece x y isRemoving piece =
     H.button
         [ HA.class "gamePiece"
         , HA.class colorClass
-        , HA.classList [ ( "-removing", isRemoving ) ]
+        , HA.classList
+            [ ( "-removing", isRemoving )
+            , ( "-falling", fallingFrom > 0 )
+            , ( "-fallingFrom" ++ String.fromInt fallingFrom, fallingFrom > 0 )
+            ]
         , HE.onClick <| ClickedPiece piece ( x, y )
         ]
         []
