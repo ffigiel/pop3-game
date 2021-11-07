@@ -23,7 +23,7 @@ minChain =
 
 size : { width : Int, height : Int }
 size =
-    { width = 6, height = 3 }
+    { width = 6, height = 8 }
 
 
 queueSize : Int
