@@ -90,16 +90,16 @@ update msg model =
 
         ClickedPiece piece ( x, y ) ->
             let
-                matches =
+                chain =
                     Board.chainOfSameColor piece ( x, y ) model.board
             in
-            if Set.size matches < 3 then
+            if Set.size chain < Board.minChain then
                 ( model, Cmd.none )
 
             else
                 ( { model
-                    | score = model.score + Set.size matches
-                    , removedPieces = matches
+                    | score = model.score + Set.size chain
+                    , removedPieces = chain
                   }
                 , Task.perform (\_ -> UpdateRemovedPieces) (Process.sleep 500)
                 )
@@ -141,8 +141,23 @@ view : Model -> Html Msg
 view model =
     H.div []
         [ viewBoard model
+        , if Board.isGameOver model.board then
+            viewGameOver model.score
+
+          else
+            H.text ""
         , H.p []
             [ H.text <| String.fromInt model.score
+            ]
+        ]
+
+
+viewGameOver : Int -> Html Msg
+viewGameOver score =
+    H.div [ HA.class "gameOverScreen" ]
+        [ H.div [ HA.class "gameOverScreen_text" ]
+            [ H.p [ HA.class "gameOverScreen_title" ] [ H.text "Game over" ]
+            , H.p [] [ H.text <| "Score: " ++ String.fromInt score ]
             ]
         ]
 

@@ -3,6 +3,8 @@ module Board exposing
     , Piece(..)
     , chainOfSameColor
     , generator
+    , isGameOver
+    , minChain
     , piecesQueueGenerator
     , queueSize
     , removePieces
@@ -12,6 +14,11 @@ import Array
 import Array2d exposing (Array2d)
 import Random exposing (Generator)
 import Set exposing (Set)
+
+
+minChain : Int
+minChain =
+    3
 
 
 size : { width : Int, height : Int }
@@ -193,3 +200,19 @@ removePieces removedPieces piecesQueue board =
                 blankCoords
     in
     ( Array2d.map (Maybe.withDefault Red) withNewPieces, newQueue )
+
+
+isGameOver : Board -> Bool
+isGameOver board =
+    board
+        |> Array2d.indexedMap (\x y piece -> ( x, y, piece ))
+        |> Array2d.toList
+        |> List.concat
+        |> List.all
+            (\( x, y, piece ) ->
+                let
+                    chain =
+                        chainOfSameColor piece ( x, y ) board
+                in
+                Set.size chain < minChain
+            )
