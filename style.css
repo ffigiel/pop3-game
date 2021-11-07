@@ -6,6 +6,19 @@ body {
   margin: 0;
 }
 
+html {
+  font-family:
+    -apple-system,
+    blinkmacsystemfont,
+    segoe ui,
+    roboto,
+    oxygen-sans,
+    ubuntu,
+    cantarell,
+    helvetica neue,
+    sans-serif;
+}
+
 p {
   margin: 0;
 }
