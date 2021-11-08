@@ -30,6 +30,7 @@ p {
 button {
   font-size: inherit;
   font-family: inherit;
+  font-weight: inherit;
   color: inherit;
   text-shadow: inherit;
   background: none;
@@ -205,13 +206,13 @@ html {
   inset: 0;
   display: grid;
   font-size: 2rem;
-  background-color: #3333;
+  background-color: #3339;
   place-items: center;
-  animation: 800ms gameOverScreenInsert;
-  animation-fill-mode: both;
+  backdrop-filter: grayscale(40%);
 }
 .gameOverScreen_text {
   user-select: none;
+  font-weight: bold;
   text-align: center;
   text-shadow: 0 0.1em 0.05em #333;
   animation: 800ms gameOverScreen_textInsert;
@@ -219,13 +220,6 @@ html {
 }
 .gameOverScreen_title {
   font-size: 4rem;
-  font-weight: bold;
-}
-
-@keyframes gameOverScreenInsert {
-  to {
-    backdrop-filter: grayscale(60%);
-  }
 }
 
 @keyframes gameOverScreen_textInsert {
