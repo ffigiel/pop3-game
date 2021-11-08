@@ -135,11 +135,9 @@ html {
   animation-fill-mode: both;
 }
 @keyframes gamePieceRemoving {
-  from {
-    opacity: 1;
-  }
   to {
-    opacity: 0;
+    opacity: 0.5;
+    filter: blur(0.5rem);
     transform: scale(0);
   }
 }
