@@ -43,11 +43,11 @@ button {
 /* Vars */
 
 :root {
-  --red: #d1454c;
-  --yellow: #dfb247;
-  --green: #459358;
-  --blue: #5caedc;
-  --purple: #9f89ea;
+  --red: #d06060;
+  --yellow: #f0bd62;
+  --green: #6ead54;
+  --blue: #5eb3e2;
+  --purple: #8d75cd;
 
   --board-gap: 1rem;
   --piece-size: 5rem;
@@ -138,7 +138,7 @@ html {
 
 .gamePiece.-falling {
   animation-duration: 500ms;
-  animation-timing-function: ease;
+  animation-timing-function: ease-in-out;
 }
 .gamePiece.-fallingFrom1 { animation-name: gamePieceFallingFrom1; }
 @keyframes gamePieceFallingFrom1 {
