@@ -90,10 +90,18 @@ html {
 }
 
 .gamePiece {
-  touch-action: none;
   border-radius: 100%;
   width: var(--piece-size);
   height: var(--piece-size);
+  box-shadow:
+    1rem 1rem 1rem #fff2 inset,
+    -1rem -1rem 1rem #0002 inset;
+  color: #3336;
+  text-shadow: 1px 1px 1px #fff3;
+  font-weight: bold;
+  font-size: 2rem;
+  user-select: none;
+  touch-action: none;
   transition: transform 200ms;
   transition-timing-function: ease-out;
 }

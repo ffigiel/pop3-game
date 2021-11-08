@@ -299,22 +299,22 @@ viewFallingPieces model =
 viewPiece : { x : Int, y : Int, piece : Piece, isRemoving : Bool, fallingFrom : Int } -> Html Msg
 viewPiece { x, y, piece, isRemoving, fallingFrom } =
     let
-        colorClass =
+        ( colorClass, symbol ) =
             case piece of
                 Red ->
-                    "-red"
+                    ( "-red", "★" )
 
                 Yellow ->
-                    "-yellow"
+                    ( "-yellow", "▲" )
 
                 Green ->
-                    "-green"
+                    ( "-green", "●" )
 
                 Blue ->
-                    "-blue"
+                    ( "-blue", "◆" )
 
                 Purple ->
-                    "-purple"
+                    ( "-purple", "■" )
     in
     H.button
         [ HA.class "gamePiece"
@@ -327,7 +327,7 @@ viewPiece { x, y, piece, isRemoving, fallingFrom } =
         , HE.onClick <| ClickedPiece piece ( x, y )
         , HA.type_ "button"
         ]
-        []
+        [ H.text symbol ]
 
 
 viewPiecePlaceholder : Html Msg
