@@ -7,20 +7,18 @@ clean:
 	rm -rf dist
 
 dist: clean
-	mkdir dist
-	elm make src/Main.elm --optimize --output dist/main.js
-	cp style.css dist
-	cp index.html dist
+	npx vite build
 
 dev:
-	npx elm-live src/Main.elm --host 0.0.0.0 --start-page index.html -- --output main.js
+	npx vite
 
-deploy-pages: dist
+deploy-pages: clean
+	npx vite build --base /pop3-game/
 	git checkout f2568b9
 	git branch -D gh-pages
 	git checkout -b gh-pages
 	mv dist/* .
-	git add main.js style.css index.html
+	git add index.html assets
 	git commit -m "chore: release ${VERSION_ID}"
 	git push -f origin gh-pages
 	git checkout main
