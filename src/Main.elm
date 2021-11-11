@@ -53,9 +53,17 @@ type alias Model =
     , score : Int
     , highScore : Maybe Int
     , isNewHighScore : Bool
-    , removedPieces : Dict ( Int, Int ) Piece
-    , fallingPieces : Dict ( Int, Int ) { start : Float, distance : Int }
+    , removedPieces : RemovedPieces
+    , fallingPieces : FallingPieces
     }
+
+
+type alias RemovedPieces =
+    Dict ( Int, Int ) Piece
+
+
+type alias FallingPieces =
+    Dict ( Int, Int ) { start : Float, distance : Int }
 
 
 init : Flags -> ( Model, Cmd Msg )
