@@ -117,6 +117,7 @@ html {
 
 .gameScore {
   margin-left: var(--font-s);
+  color: #eee9;
 }
 
 .gameOverScreen {

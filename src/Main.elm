@@ -305,11 +305,7 @@ view model =
               else
                 H.text ""
             ]
-        , if model.isGameOver then
-            H.text ""
-
-          else
-            HL.lazy2 viewScore model.score model.highScore
+        , HL.lazy2 viewScore model.score model.highScore
         ]
 
 
