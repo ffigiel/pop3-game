@@ -1,6 +1,6 @@
 port module Main exposing (main)
 
-import Array exposing (Array)
+import Array
 import Board exposing (Board, Piece(..))
 import Browser
 import Dict exposing (Dict)
@@ -10,6 +10,9 @@ import Html.Events as HE
 import Json.Decode as JD
 import Process
 import Random
+import Svg as S exposing (Svg)
+import Svg.Attributes as SA
+import Svg.Events as SE
 import Task
 
 
@@ -139,7 +142,7 @@ update msg model =
                   }
                 , Cmd.batch
                     [ refillPiecesQueue newPiecesQueue
-                    , Task.perform (\_ -> RemoveAnimationState model.score) (Process.sleep 5000)
+                    , Task.perform (\_ -> RemoveAnimationState model.score) (Process.sleep 500)
                     ]
                 )
                     |> handleGameOver
@@ -224,7 +227,6 @@ view model =
     H.div [ HA.class "gameContainer" ]
         [ H.div [ HA.style "position" "relative" ]
             [ viewBoard model
-            , viewFallingPieces model
             , if isGameOver then
                 viewGameOver model
 
@@ -239,61 +241,71 @@ view model =
         ]
 
 
-viewBoard : Model -> Html Msg
+viewBoard : Model -> Svg Msg
 viewBoard model =
     let
-        viewRow : Int -> Array Piece -> Html Msg
         viewRow y row =
-            H.div []
-                (Array.toList row
-                    |> List.indexedMap
-                        (\x piece ->
-                            viewPiece
-                                { x = x
-                                , y = y
-                                , piece = piece
-                                , isRemoving = False
-                                , fallingFrom =
-                                    Dict.get ( x, y ) model.fallingPieces
-                                        |> Maybe.withDefault 0
-                                }
-                        )
-                )
+            Array.toList row
+                |> List.indexedMap
+                    (\x piece ->
+                        viewPiece
+                            { x = x
+                            , y = y
+                            , piece = piece
+                            , isRemoving = False
+                            , fallingFrom =
+                                Dict.get ( x, y ) model.fallingPieces
+                                    |> Maybe.withDefault 0
+                            }
+                    )
+
+        ( width, height ) =
+            Board.boardRenderSize
     in
-    H.div [ HA.class "gameBoard" ]
-        (Array.toList model.board
-            |> List.indexedMap viewRow
-        )
+    S.svg
+        [ SA.viewBox
+            ([ -Board.padding
+             , -Board.padding
+             , width + 2 * Board.padding
+             , height + 2 * Board.padding
+             ]
+                |> List.map String.fromFloat
+                |> String.join " "
+            )
+        ]
+        [ S.g [] <| viewFallingPieces model
+        , S.g []
+            (Array.toList model.board
+                |> List.indexedMap viewRow
+                |> List.concat
+            )
+        ]
 
 
-viewFallingPieces : Model -> Html Msg
+viewFallingPieces : Model -> List (Svg Msg)
 viewFallingPieces model =
     let
-        viewRow : Int -> Array Piece -> Html Msg
         viewRow y row =
-            H.div []
-                (Array.toList row
-                    |> List.indexedMap
-                        (\x _ ->
-                            case Dict.get ( x, y ) model.removedPieces of
-                                Just p ->
-                                    viewPiece
-                                        { x = x
-                                        , y = y
-                                        , piece = p
-                                        , isRemoving = True
-                                        , fallingFrom = 0
-                                        }
+            Array.toList row
+                |> List.indexedMap
+                    (\x _ ->
+                        case Dict.get ( x, y ) model.removedPieces of
+                            Just p ->
+                                viewPiece
+                                    { x = x
+                                    , y = y
+                                    , piece = p
+                                    , isRemoving = True
+                                    , fallingFrom = 0
+                                    }
 
-                                Nothing ->
-                                    viewPiecePlaceholder
-                        )
-                )
+                            Nothing ->
+                                H.text ""
+                    )
     in
-    H.div [ HA.class "gameBoard -falling" ]
-        (Array.toList model.board
-            |> List.indexedMap viewRow
-        )
+    Array.toList model.board
+        |> List.indexedMap viewRow
+        |> List.concat
 
 
 viewPiece : { x : Int, y : Int, piece : Piece, isRemoving : Bool, fallingFrom : Int } -> Html Msg
@@ -315,24 +327,48 @@ viewPiece { x, y, piece, isRemoving, fallingFrom } =
 
                 Purple ->
                     ( "-purple", "■" )
+
+        ( xPos, yPos ) =
+            Board.pieceRenderPosition ( x, y )
     in
-    H.button
-        [ HA.class "gamePiece"
-        , HA.class colorClass
-        , HA.classList
-            [ ( "-removing", isRemoving )
-            , ( "-falling", fallingFrom > 0 )
-            , ( "-fallingFrom" ++ String.fromInt fallingFrom, fallingFrom > 0 )
-            ]
-        , HE.onClick <| ClickedPiece piece ( x, y )
-        , HA.type_ "button"
+    S.g
+        [ SA.transform <|
+            "translate("
+                ++ String.fromFloat (xPos + (Board.pieceSize / 2))
+                ++ " "
+                ++ String.fromFloat (yPos + (Board.pieceSize / 2))
+                ++ ")"
         ]
-        [ H.text symbol ]
+        [ S.g
+            [ SA.class
+                ([ ( "gamePiece", True )
+                 , ( colorClass, True )
+                 , ( "-removing", isRemoving )
+                 ]
+                    |> List.filterMap
+                        (\( c, b ) ->
+                            if b then
+                                Just c
 
-
-viewPiecePlaceholder : Html Msg
-viewPiecePlaceholder =
-    H.button [ HA.class "gamePiece -placeholder" ] []
+                            else
+                                Nothing
+                        )
+                    |> String.join " "
+                )
+            , SE.onClick <| ClickedPiece piece ( x, y )
+            ]
+            [ S.circle
+                [ SA.r <| String.fromFloat <| Board.pieceSize / 2
+                ]
+                []
+            , S.text_
+                [ SA.textAnchor "middle"
+                , SA.dy "0.7"
+                , SA.fontSize "2"
+                ]
+                [ S.text symbol ]
+            ]
+        ]
 
 
 viewGameOver : { a | score : Int, isNewHighScore : Bool } -> Html Msg

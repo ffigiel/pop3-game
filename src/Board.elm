@@ -1,10 +1,17 @@
 module Board exposing
     ( Board
     , Piece(..)
+    , boardRenderSize
     , chainOfSameColor
     , generator
+    , gutter
     , isGameOver
     , minChain
+    , numCols
+    , numRows
+    , padding
+    , pieceRenderPosition
+    , pieceSize
     , piecesQueueGenerator
     , queueSize
     , removePieces
@@ -16,26 +23,63 @@ import Dict exposing (Dict)
 import Random exposing (Generator)
 
 
+padding : Float
+padding =
+    gutter
+
+
+gutter : Float
+gutter =
+    1
+
+
+pieceSize : Float
+pieceSize =
+    5
+
+
+numCols : Int
+numCols =
+    6
+
+
+numRows : Int
+numRows =
+    8
+
+
+boardRenderSize : ( Float, Float )
+boardRenderSize =
+    pieceRenderPosition ( numCols, numRows )
+        |> (\( w, h ) -> ( w - gutter, h - gutter ))
+
+
+pieceRenderPosition : ( Int, Int ) -> ( Float, Float )
+pieceRenderPosition ( x, y ) =
+    let
+        pieceSizeWithGutter =
+            pieceSize + gutter
+    in
+    ( toFloat x * pieceSizeWithGutter
+    , toFloat y * pieceSizeWithGutter
+    )
+
+
 minChain : Int
 minChain =
     3
 
 
-size : { width : Int, height : Int }
-size =
-    { width = 6, height = 8 }
-
-
 queueSize : Int
 queueSize =
-    size.width * size.height
+    numCols * numRows
 
 
 generator : Generator Board
 generator =
     pieceGenerator
-        |> Random.list size.width
-        |> Random.list size.height
+        |> Random.list numCols
+        |> Random.list numRows
         |> Random.map Array2d.fromList
 
 

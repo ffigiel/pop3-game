@@ -66,42 +66,12 @@ html {
 /* Game */
 
 .gameContainer {
-  margin: var(--board-gap);
-}
-.gameContainer > :not(:last-child) {
-  margin-bottom: var(--board-gap);
-}
-
-.gameBoard {
-  gap: var(--board-gap);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.gameBoard.-falling {
-  position: absolute;
-  inset: 0;
-  opacity: 0.5;
-  z-index: -1;
-}
-.gameBoard > * {
-  gap: var(--board-gap);
-  display: flex;
-  flex-direction: row;
+  margin: 0 auto;
+  max-width: 40rem;
 }
 
 .gamePiece {
-  border-radius: 100%;
-  width: var(--piece-size);
-  height: var(--piece-size);
-  box-shadow:
-    1rem 1rem 1rem #fff2 inset,
-    -1rem -1rem 1rem #0002 inset;
-  color: #3336;
-  text-shadow: 1px 1px 1px #fff3;
-  font-weight: bold;
-  font-size: 2rem;
-  user-select: none;
+  cursor: pointer;
   touch-action: none;
   transition: transform 200ms;
   transition-timing-function: ease-out;
@@ -109,27 +79,30 @@ html {
 .gamePiece:hover {
   transform: scale(110%);
 }
-.gamePiece.-placeholder {
+.gamePiece.-red circle {
+  fill: var(--red);
+}
+.gamePiece.-yellow circle {
+  fill: var(--yellow);
+}
+.gamePiece.-green circle {
+  fill: var(--green);
+}
+.gamePiece.-blue circle {
+  fill: var(--blue);
+}
+.gamePiece.-purple circle {
+  fill: var(--purple);
+}
+.gamePiece text {
+  fill: #3336;
+  font-weight: bold;
+  user-select: none;
   pointer-events: none;
-  opacity: 0;
-}
-.gamePiece.-red {
-  background-color: var(--red);
-}
-.gamePiece.-yellow {
-  background-color: var(--yellow);
-}
-.gamePiece.-green {
-  background-color: var(--green);
-}
-.gamePiece.-blue {
-  background-color: var(--blue);
-}
-.gamePiece.-purple {
-  background-color: var(--purple);
 }
 
 .gamePiece.-removing {
+  z-index: 10;
   pointer-events: none;
   animation: 500ms gamePieceRemoving;
   animation-timing-function: ease-out;
@@ -137,67 +110,14 @@ html {
 }
 @keyframes gamePieceRemoving {
   to {
-    opacity: 0.5;
-    filter: blur(0.5rem);
-    transform: scale(0);
+    opacity: 0;
+    filter: blur(0.05em);
+    transform: scale(0.5);
   }
-}
-
-.gamePiece.-falling {
-  animation-duration: 500ms;
-  animation-timing-function: ease-in-out;
-}
-.gamePiece.-fallingFrom1 { animation-name: gamePieceFallingFrom1; }
-@keyframes gamePieceFallingFrom1 {
-  from {
-    transform: translateY(calc(-1 * (var(--board-gap) + var(--piece-size))));
-  }
-  to { transform: none; }
-}
-.gamePiece.-fallingFrom2 { animation-name: gamePieceFallingFrom2; }
-@keyframes gamePieceFallingFrom2 {
-  from {
-    transform: translateY(calc(-2 * (var(--board-gap) + var(--piece-size))));
-  }
-  to { transform: none; }
-}
-.gamePiece.-fallingFrom3 { animation-name: gamePieceFallingFrom3; }
-@keyframes gamePieceFallingFrom3 {
-  from {
-    transform: translateY(calc(-3 * (var(--board-gap) + var(--piece-size))));
-  }
-  to { transform: none; }
-}
-.gamePiece.-fallingFrom4 { animation-name: gamePieceFallingFrom4; }
-@keyframes gamePieceFallingFrom4 {
-  from {
-    transform: translateY(calc(-4 * (var(--board-gap) + var(--piece-size))));
-  }
-  to { transform: none; }
-}
-.gamePiece.-fallingFrom5 { animation-name: gamePieceFallingFrom5; }
-@keyframes gamePieceFallingFrom5 {
-  from {
-    transform: translateY(calc(-5 * (var(--board-gap) + var(--piece-size))));
-  }
-  to { transform: none; }
-}
-.gamePiece.-fallingFrom6 { animation-name: gamePieceFallingFrom6; }
-@keyframes gamePieceFallingFrom6 {
-  from {
-    transform: translateY(calc(-6 * (var(--board-gap) + var(--piece-size))));
-  }
-  to { transform: none; }
-}
-.gamePiece.-fallingFrom7 { animation-name: gamePieceFallingFrom7; }
-@keyframes gamePieceFallingFrom7 {
-  from {
-    transform: translateY(calc(-7 * (var(--board-gap) + var(--piece-size))));
-  }
-  to { transform: none; }
 }
 
 .gameScore {
+  margin-left: 1rem;
   font-size: 2rem;
 }
 
