@@ -3,6 +3,7 @@ port module Main exposing (main)
 import Array
 import Board exposing (Board, Piece(..))
 import Browser
+import Browser.Events
 import Dict exposing (Dict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
@@ -47,12 +48,13 @@ type alias Flags =
 
 type alias Model =
     { board : Board
+    , time : Float
     , piecesQueue : List Piece
     , score : Int
     , highScore : Maybe Int
     , isNewHighScore : Bool
     , removedPieces : Dict ( Int, Int ) Piece
-    , fallingPieces : Dict ( Int, Int ) Int
+    , fallingPieces : Dict ( Int, Int ) { start : Float, distance : Int }
     }
 
 
@@ -61,6 +63,7 @@ init flags =
     let
         model =
             { board = Array.empty
+            , time = 0
             , piecesQueue = []
             , score = 0
             , highScore = highScore
@@ -94,6 +97,7 @@ generateBoardCmd =
 
 type Msg
     = Init { board : Board, piecesQueue : List Piece }
+    | Tick Float
     | ClickedPiece Piece ( Int, Int )
     | GotPiecesQueue (List Piece)
     | RemoveAnimationState Int
@@ -114,6 +118,9 @@ update msg model =
               else
                 Cmd.none
             )
+
+        Tick d ->
+            ( { model | time = model.time + d }, Cmd.none )
 
         ClickedPiece piece ( x, y ) ->
             let
@@ -137,7 +144,14 @@ update msg model =
                     | score = newScore
                     , removedPieces = chain
                     , board = newBoard
-                    , fallingPieces = fallingPieces
+                    , fallingPieces =
+                        fallingPieces
+                            |> Dict.map
+                                (\_ v ->
+                                    { start = model.time
+                                    , distance = v
+                                    }
+                                )
                     , piecesQueue = newPiecesQueue
                   }
                 , Cmd.batch
@@ -215,7 +229,7 @@ refillPiecesQueue queue =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Browser.Events.onAnimationFrameDelta Tick
 
 
 view : Model -> Html Msg
@@ -249,13 +263,13 @@ viewBoard model =
                 |> List.indexedMap
                     (\x piece ->
                         viewPiece
-                            { x = x
+                            { now = model.time
+                            , x = x
                             , y = y
                             , piece = piece
                             , isRemoving = False
                             , fallingFrom =
                                 Dict.get ( x, y ) model.fallingPieces
-                                    |> Maybe.withDefault 0
                             }
                     )
 
@@ -292,11 +306,12 @@ viewFallingPieces model =
                         case Dict.get ( x, y ) model.removedPieces of
                             Just p ->
                                 viewPiece
-                                    { x = x
+                                    { now = model.time
+                                    , x = x
                                     , y = y
                                     , piece = p
                                     , isRemoving = True
-                                    , fallingFrom = 0
+                                    , fallingFrom = Nothing
                                     }
 
                             Nothing ->
@@ -308,8 +323,16 @@ viewFallingPieces model =
         |> List.concat
 
 
-viewPiece : { x : Int, y : Int, piece : Piece, isRemoving : Bool, fallingFrom : Int } -> Html Msg
-viewPiece { x, y, piece, isRemoving, fallingFrom } =
+viewPiece :
+    { now : Float
+    , x : Int
+    , y : Int
+    , piece : Piece
+    , isRemoving : Bool
+    , fallingFrom : Maybe { start : Float, distance : Int }
+    }
+    -> Html Msg
+viewPiece { now, x, y, piece, isRemoving, fallingFrom } =
     let
         ( colorClass, symbol ) =
             case piece of
@@ -330,6 +353,28 @@ viewPiece { x, y, piece, isRemoving, fallingFrom } =
 
         ( xPos, yPos ) =
             Board.pieceRenderPosition ( x, y )
+                |> (\( xp, yp ) ->
+                        case fallingFrom of
+                            Just f ->
+                                let
+                                    totalDistance =
+                                        (toFloat f.distance * Board.pieceSize)
+                                            + (toFloat (f.distance - 1) * Board.gutter)
+
+                                    animationProgress =
+                                        (now - f.start)
+                                            |> clamp 0 500
+                                            |> (\duration -> duration / 500)
+                                            |> (\p -> p * pi / 2 |> sin)
+
+                                    yOffset =
+                                        totalDistance * (1 - animationProgress)
+                                in
+                                ( xp, yp - yOffset )
+
+                            Nothing ->
+                                ( xp, yp )
+                   )
     in
     S.g
         [ SA.transform <|
