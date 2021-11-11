@@ -5,7 +5,7 @@ import Board exposing (Board, Piece(..))
 import Browser
 import Browser.Events
 import Dict exposing (Dict)
-import Html as H exposing (Html)
+import Html as H exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import Html.Lazy as HL
@@ -434,20 +434,44 @@ viewGameOver score isNewHighScore =
     H.div [ HA.class "gameOverScreen" ]
         [ H.div [ HA.class "gameOverScreen_text" ]
             [ H.p [ HA.class "gameOverScreen_title" ] [ H.text "Game over" ]
-            , H.p []
-                [ if isNewHighScore then
-                    H.text <| "New high score! " ++ String.fromInt score
+            , H.div []
+                [ H.p []
+                    [ if isNewHighScore then
+                        H.text <| "New high score! " ++ String.fromInt score
 
-                  else
-                    H.text <| "Score: " ++ String.fromInt score
-                ]
-            , H.p []
-                [ H.button
-                    [ HA.type_ "button"
-                    , HE.onClick PlayAgainClicked
+                      else
+                        H.text <| "Score: " ++ String.fromInt score
                     ]
-                    [ H.text "Play again?" ]
+                , H.p []
+                    [ H.button
+                        [ HA.type_ "button"
+                        , HE.onClick PlayAgainClicked
+                        ]
+                        [ H.text "Play again?" ]
+                    ]
                 ]
+            , if score > Board.myHighScore then
+                H.div
+                    [ HA.class "gameOverScreen_congrats"
+                    ]
+                    [ H.p []
+                        [ H.text "Congratulations!"
+                        , H.br [] []
+                        , H.text "You beat my high score."
+                        , H.br [] []
+                        , H.text "Thanks for playing!"
+                        ]
+                    , H.p []
+                        [ externalLink
+                            [ HA.href "https://github.com/megapctr/pop3-game"
+                            , HA.style "font-size" "1.2rem"
+                            ]
+                            [ H.text "View source code ↗" ]
+                        ]
+                    ]
+
+              else
+                H.text ""
             ]
         ]
 
@@ -464,3 +488,14 @@ viewScore score highScore =
             Nothing ->
                 H.text ""
         ]
+
+
+externalLink : List (Attribute msg) -> List (Html msg) -> Html msg
+externalLink otherAttrs children =
+    let
+        attrs =
+            HA.target "_blank"
+                :: HA.rel "noopener noreferrer"
+                :: otherAttrs
+    in
+    H.a attrs children

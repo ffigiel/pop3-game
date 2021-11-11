@@ -9,6 +9,7 @@ module Board exposing
     , gutter
     , isGameOver
     , minChain
+    , myHighScore
     , numCols
     , numRows
     , padding
@@ -23,6 +24,11 @@ import Array
 import Array2d exposing (Array2d)
 import Dict exposing (Dict)
 import Random exposing (Generator)
+
+
+myHighScore : Int
+myHighScore =
+    6969
 
 
 padding : Float
