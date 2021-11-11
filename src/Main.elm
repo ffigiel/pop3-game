@@ -49,6 +49,7 @@ type alias Flags =
 type alias Model =
     { board : Board
     , time : Float
+    , isGameOver : Bool
     , piecesQueue : List Piece
     , score : Int
     , highScore : Maybe Int
@@ -72,6 +73,7 @@ init flags =
         model =
             { board = Array.empty
             , time = 0
+            , isGameOver = False
             , piecesQueue = []
             , score = 0
             , highScore = highScore
@@ -187,7 +189,8 @@ update msg model =
 
         PlayAgainClicked ->
             ( { model
-                | score = 0
+                | isGameOver = False
+                , score = 0
                 , isNewHighScore = False
                 , removedPieces = Dict.empty
                 , fallingPieces = Dict.empty
@@ -209,7 +212,8 @@ handleGameOver ( model, cmd ) =
                         ( max hs model.score, model.score > hs )
         in
         ( { model
-            | highScore = Just highScore
+            | isGameOver = True
+            , highScore = Just highScore
             , isNewHighScore = isNewHighScore
           }
         , Cmd.batch
@@ -242,20 +246,16 @@ subscriptions _ =
 
 view : Model -> Html Msg
 view model =
-    let
-        isGameOver =
-            Board.isGameOver model.board
-    in
     H.div [ HA.class "gameContainer" ]
         [ H.div [ HA.style "position" "relative" ]
             [ viewBoard model
-            , if isGameOver then
+            , if model.isGameOver then
                 viewGameOver model
 
               else
                 H.text ""
             ]
-        , if isGameOver then
+        , if model.isGameOver then
             H.text ""
 
           else
