@@ -166,7 +166,7 @@ update msg model =
                   }
                 , Cmd.batch
                     [ refillPiecesQueue newPiecesQueue
-                    , Task.perform (\_ -> RemoveAnimationState model.score) (Process.sleep 500)
+                    , Task.perform (\_ -> RemoveAnimationState newScore) (Process.sleep 500)
                     ]
                 )
                     |> handleGameOver
