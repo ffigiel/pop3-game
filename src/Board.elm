@@ -128,7 +128,7 @@ type alias BoardSearch =
 
 
 type alias Chain =
-    Dict ( Int, Int ) Piece
+    Dict ( Int, Int ) { piece : Piece, order : Int }
 
 
 chainOfSameColor : Piece -> ( Int, Int ) -> Board -> Chain
@@ -145,7 +145,7 @@ chainOfSameColor piece ( x, y ) board =
                     )
 
         ( _, result ) =
-            chainOfSameColorHelper piece ( x, y ) ( boardSearch, Dict.empty )
+            chainOfSameColorHelper piece ( x, y ) 0 ( boardSearch, Dict.empty )
     in
     result
 
@@ -153,9 +153,10 @@ chainOfSameColor piece ( x, y ) board =
 chainOfSameColorHelper :
     Piece
     -> ( Int, Int )
+    -> Int
     -> ( BoardSearch, Chain )
     -> ( BoardSearch, Chain )
-chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
+chainOfSameColorHelper piece ( x, y ) order ( boardSearch, results ) =
     let
         match =
             boardSearch
@@ -163,7 +164,7 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
                 |> Maybe.andThen
                     (\t ->
                         if not t.visited && t.piece == piece then
-                            Just t.piece
+                            Just { piece = t.piece, order = order }
 
                         else
                             Nothing
@@ -183,10 +184,10 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
     case match of
         Just p ->
             ( newBoardSearch, Dict.insert ( x, y ) p results )
-                |> chainOfSameColorHelper piece ( x + 1, y )
-                |> chainOfSameColorHelper piece ( x - 1, y )
-                |> chainOfSameColorHelper piece ( x, y + 1 )
-                |> chainOfSameColorHelper piece ( x, y - 1 )
+                |> chainOfSameColorHelper piece ( x + 1, y ) (order + 1)
+                |> chainOfSameColorHelper piece ( x - 1, y ) (order + 1)
+                |> chainOfSameColorHelper piece ( x, y + 1 ) (order + 1)
+                |> chainOfSameColorHelper piece ( x, y - 1 ) (order + 1)
 
         Nothing ->
             ( newBoardSearch, results )
@@ -203,7 +204,7 @@ chainScore chain =
         |> round
 
 
-removePieces : Dict ( Int, Int ) Piece -> List Piece -> Board -> ( Board, List Piece, Dict ( Int, Int ) Int )
+removePieces : Chain -> List Piece -> Board -> ( Board, List Piece, Dict ( Int, Int ) Int )
 removePieces removedPieces piecesQueue board =
     let
         ( _, colLength ) =

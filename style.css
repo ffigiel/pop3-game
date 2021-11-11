@@ -115,21 +115,6 @@ html {
   pointer-events: none;
 }
 
-.gamePiece.-removing {
-  z-index: 10;
-  pointer-events: none;
-  animation: 500ms gamePieceRemoving;
-  animation-timing-function: ease-out;
-  animation-fill-mode: both;
-}
-@keyframes gamePieceRemoving {
-  to {
-    opacity: 0;
-    filter: blur(0.05em);
-    transform: scale(0.5);
-  }
-}
-
 .gameScore {
   margin-left: var(--font-s);
 }

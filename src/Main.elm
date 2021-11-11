@@ -61,7 +61,7 @@ type alias Model =
 
 
 type alias RemovedPieces =
-    Dict ( Int, Int ) Piece
+    Dict ( Int, Int ) { start : Float, piece : Piece }
 
 
 type alias FallingPieces =
@@ -150,16 +150,36 @@ update msg model =
 
                     newScore =
                         model.score + Board.chainScore chain
+
+                    removedPieces =
+                        let
+                            maxOrder =
+                                Dict.foldl
+                                    (\_ { order } n ->
+                                        max order n
+                                    )
+                                    0
+                                    chain
+                        in
+                        Dict.map
+                            (\_ v ->
+                                let
+                                    delay =
+                                        removingAnimationStagger * toFloat v.order / toFloat (maxOrder + 1)
+                                in
+                                { start = model.time + delay, piece = v.piece }
+                            )
+                            chain
                 in
                 ( { model
                     | score = newScore
-                    , removedPieces = chain
+                    , removedPieces = removedPieces
                     , board = newBoard
                     , fallingPieces =
                         fallingPieces
                             |> Dict.map
                                 (\_ v ->
-                                    { start = model.time
+                                    { start = model.time + fallingAnimationDelay
                                     , distance = v
                                     }
                                 )
@@ -167,7 +187,9 @@ update msg model =
                   }
                 , Cmd.batch
                     [ refillPiecesQueue newPiecesQueue
-                    , Task.perform (\_ -> RemoveAnimationState newScore) (Process.sleep 500)
+                    , Task.perform
+                        (\_ -> RemoveAnimationState newScore)
+                        (Process.sleep (fallingAnimationDelay + fallingAnimationDuration))
                     ]
                 )
                     |> handleGameOver
@@ -245,6 +267,30 @@ subscriptions _ =
     Browser.Events.onAnimationFrameDelta Tick
 
 
+
+-- VIEW
+
+
+removingAnimationStagger : number
+removingAnimationStagger =
+    400
+
+
+removingAnimationDuration : number
+removingAnimationDuration =
+    300
+
+
+fallingAnimationDelay : number
+fallingAnimationDelay =
+    300
+
+
+fallingAnimationDuration : number
+fallingAnimationDuration =
+    400
+
+
 view : Model -> Html Msg
 view model =
     H.div [ HA.class "gameContainer" ]
@@ -280,9 +326,13 @@ viewBoard time board removedPieces fallingPieces =
                             , x = x
                             , y = y
                             , piece = piece
-                            , isRemoving = False
-                            , fallingFrom =
-                                Dict.get ( x, y ) fallingPieces
+                            , animation =
+                                case Dict.get ( x, y ) fallingPieces of
+                                    Just falling ->
+                                        PieceFalling falling
+
+                                    Nothing ->
+                                        PieceIdle
                             }
                     )
 
@@ -300,7 +350,7 @@ viewBoard time board removedPieces fallingPieces =
                 |> String.join " "
             )
         ]
-        [ S.g [] <| viewFallingPieces time board removedPieces
+        [ S.g [] <| viewRemovedPieces time board removedPieces
         , S.g []
             (Array.toList board
                 |> List.indexedMap viewRow
@@ -309,8 +359,8 @@ viewBoard time board removedPieces fallingPieces =
         ]
 
 
-viewFallingPieces : Float -> Board -> RemovedPieces -> List (Svg Msg)
-viewFallingPieces time board removedPieces =
+viewRemovedPieces : Float -> Board -> RemovedPieces -> List (Svg Msg)
+viewRemovedPieces time board removedPieces =
     let
         viewRow y row =
             Array.toList row
@@ -322,9 +372,8 @@ viewFallingPieces time board removedPieces =
                                     { now = time
                                     , x = x
                                     , y = y
-                                    , piece = p
-                                    , isRemoving = True
-                                    , fallingFrom = Nothing
+                                    , piece = p.piece
+                                    , animation = PieceRemoving { start = p.start }
                                     }
 
                             Nothing ->
@@ -336,16 +385,21 @@ viewFallingPieces time board removedPieces =
         |> List.concat
 
 
+type PieceAnimation
+    = PieceIdle
+    | PieceRemoving { start : Float }
+    | PieceFalling { start : Float, distance : Int }
+
+
 viewPiece :
     { now : Float
     , x : Int
     , y : Int
     , piece : Piece
-    , isRemoving : Bool
-    , fallingFrom : Maybe { start : Float, distance : Int }
+    , animation : PieceAnimation
     }
     -> Html Msg
-viewPiece { now, x, y, piece, isRemoving, fallingFrom } =
+viewPiece { now, x, y, piece, animation } =
     let
         ( colorClass, symbol ) =
             case piece of
@@ -364,29 +418,54 @@ viewPiece { now, x, y, piece, isRemoving, fallingFrom } =
                 Purple ->
                     ( "-purple", "■" )
 
-        ( xPos, yPos ) =
+        ( xPos, yPos, otherAttrs ) =
             Board.pieceRenderPosition ( x, y )
                 |> (\( xp, yp ) ->
-                        case fallingFrom of
-                            Just f ->
+                        case animation of
+                            PieceIdle ->
+                                ( xp, yp, [] )
+
+                            PieceRemoving f ->
+                                let
+                                    animationProgress =
+                                        (now - f.start)
+                                            |> clamp 0 removingAnimationDuration
+                                            |> (\duration -> duration / removingAnimationDuration)
+                                            |> (\p -> p * p)
+
+                                    opacity =
+                                        1 - animationProgress
+
+                                    scale =
+                                        1 - animationProgress
+
+                                    blur =
+                                        0.025 * animationProgress
+                                in
+                                ( xp
+                                , yp
+                                , [ SA.opacity <| String.fromFloat opacity
+                                  , SA.transform <| "scale(" ++ String.fromFloat scale ++ ")"
+                                  , SA.filter <| "blur(" ++ String.fromFloat blur ++ "rem)"
+                                  , SA.pointerEvents "none"
+                                  ]
+                                )
+
+                            PieceFalling f ->
                                 let
                                     totalDistance =
-                                        (toFloat f.distance * Board.pieceSize)
-                                            + (toFloat (f.distance - 1) * Board.gutter)
+                                        toFloat f.distance * (Board.pieceSize + Board.gutter)
 
                                     animationProgress =
                                         (now - f.start)
-                                            |> clamp 0 500
-                                            |> (\duration -> duration / 500)
+                                            |> clamp 0 fallingAnimationDuration
+                                            |> (\duration -> duration / fallingAnimationDuration)
                                             |> (\p -> p * p * pi / 2 |> sin)
 
                                     yOffset =
                                         totalDistance * (1 - animationProgress)
                                 in
-                                ( xp, yp - yOffset )
-
-                            Nothing ->
-                                ( xp, yp )
+                                ( xp, yp - yOffset, [] )
                    )
     in
     S.g
@@ -398,23 +477,11 @@ viewPiece { now, x, y, piece, isRemoving, fallingFrom } =
                 ++ ")"
         ]
         [ S.g
-            [ SA.class
-                ([ ( "gamePiece", True )
-                 , ( colorClass, True )
-                 , ( "-removing", isRemoving )
-                 ]
-                    |> List.filterMap
-                        (\( c, b ) ->
-                            if b then
-                                Just c
-
-                            else
-                                Nothing
-                        )
-                    |> String.join " "
-                )
-            , SE.onClick <| ClickedPiece piece ( x, y )
-            ]
+            ([ SA.class <| "gamePiece " ++ colorClass
+             , SE.onClick <| ClickedPiece piece ( x, y )
+             ]
+                ++ otherAttrs
+            )
             [ S.circle
                 [ SA.r <| String.fromFloat <| Board.pieceSize / 2
                 ]
