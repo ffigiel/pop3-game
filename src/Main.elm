@@ -112,6 +112,7 @@ type Msg
     | ClickedPiece Piece ( Int, Int )
     | GotPiecesQueue (List Piece)
     | RemoveAnimationState Int
+    | GameOver
     | PlayAgainClicked
 
 
@@ -190,9 +191,16 @@ update msg model =
                     , Task.perform
                         (\_ -> RemoveAnimationState newScore)
                         (Process.sleep (fallingAnimationDelay + fallingAnimationDuration))
+                    , if Board.isGameOver newBoard then
+                        -- show game over screen once the animations complete
+                        Task.perform
+                            (\_ -> GameOver)
+                            (Process.sleep (fallingAnimationDelay + fallingAnimationDuration))
+
+                      else
+                        Cmd.none
                     ]
                 )
-                    |> handleGameOver
 
         GotPiecesQueue queue ->
             ( { model | piecesQueue = model.piecesQueue ++ queue }, Cmd.none )
@@ -210,6 +218,28 @@ update msg model =
             , Cmd.none
             )
 
+        GameOver ->
+            let
+                ( highScore, isNewHighScore ) =
+                    case model.highScore of
+                        Nothing ->
+                            ( model.score, True )
+
+                        Just hs ->
+                            ( max hs model.score, model.score > hs )
+            in
+            ( { model
+                | isGameOver = True
+                , highScore = Just highScore
+                , isNewHighScore = isNewHighScore
+              }
+            , if isNewHighScore then
+                saveHighScore highScore
+
+              else
+                Cmd.none
+            )
+
         PlayAgainClicked ->
             ( { model
                 | isGameOver = False
@@ -220,37 +250,6 @@ update msg model =
               }
             , generateBoardCmd
             )
-
-
-handleGameOver : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-handleGameOver ( model, cmd ) =
-    if Board.isGameOver model.board then
-        let
-            ( highScore, isNewHighScore ) =
-                case model.highScore of
-                    Nothing ->
-                        ( model.score, True )
-
-                    Just hs ->
-                        ( max hs model.score, model.score > hs )
-        in
-        ( { model
-            | isGameOver = True
-            , highScore = Just highScore
-            , isNewHighScore = isNewHighScore
-          }
-        , Cmd.batch
-            [ cmd
-            , if isNewHighScore then
-                saveHighScore highScore
-
-              else
-                Cmd.none
-            ]
-        )
-
-    else
-        ( model, cmd )
 
 
 refillPiecesQueue : List Piece -> Cmd Msg
