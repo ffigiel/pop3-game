@@ -365,7 +365,7 @@ viewPiece { now, x, y, piece, isRemoving, fallingFrom } =
                                         (now - f.start)
                                             |> clamp 0 500
                                             |> (\duration -> duration / 500)
-                                            |> (\p -> p * pi / 2 |> sin)
+                                            |> (\p -> p * p * pi / 2 |> sin)
 
                                     yOffset =
                                         totalDistance * (1 - animationProgress)
