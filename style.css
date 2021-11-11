@@ -126,6 +126,7 @@ html {
   background-color: #3339;
   place-items: center;
   backdrop-filter: grayscale(40%);
+  animation: 2300ms floatIn;
 }
 .gameOverScreen_text {
   display: flex;
@@ -134,12 +135,20 @@ html {
   gap: var(--font-xs);
   text-align: center;
   text-shadow: 0 0.1em 0.05em #333;
-  animation: 800ms gameOverScreen_textInsert;
-  animation-fill-mode: both;
   user-select: none;
 }
 .gameOverScreen_title {
   font-size: var(--font-l);
+}
+.gameOverScreen button {
+  animation: 2300ms floatIn;
+  animation-fill-mode: backwards;
+  animation-delay: 500ms;
+  transition: transform 200ms;
+  transition-timing-function: ease-out;
+}
+.gameOverScreen button:hover {
+  transform: scale(110%);
 }
 .gameOverScreen_congrats {
   margin-top: var(--font-m);
@@ -154,16 +163,12 @@ html {
   font-size: var(--font-s);
   text-align: justify;
   color: var(--yellow);
-}
-.gameOverScreen button {
-  transition: transform 200ms;
-  transition-timing-function: ease-out;
-}
-.gameOverScreen button:hover {
-  transform: scale(110%);
+  animation: 2300ms floatIn;
+  animation-fill-mode: backwards;
+  animation-delay: 800ms;
 }
 
-@keyframes gameOverScreen_textInsert {
+@keyframes floatIn {
   from {
     opacity: 0;
     transform: translateY(var(--font-s));
