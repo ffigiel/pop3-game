@@ -149,7 +149,7 @@ update msg model =
                             model.board
 
                     newScore =
-                        model.score + Dict.size chain
+                        model.score + Board.chainScore chain
                 in
                 ( { model
                     | score = newScore

@@ -1,8 +1,10 @@
 module Board exposing
     ( Board
+    , Chain
     , Piece(..)
     , boardRenderSize
     , chainOfSameColor
+    , chainScore
     , generator
     , gutter
     , isGameOver
@@ -119,7 +121,11 @@ type alias BoardSearch =
     Array2d { piece : Piece, visited : Bool }
 
 
-chainOfSameColor : Piece -> ( Int, Int ) -> Board -> Dict ( Int, Int ) Piece
+type alias Chain =
+    Dict ( Int, Int ) Piece
+
+
+chainOfSameColor : Piece -> ( Int, Int ) -> Board -> Chain
 chainOfSameColor piece ( x, y ) board =
     let
         boardSearch : BoardSearch
@@ -141,8 +147,8 @@ chainOfSameColor piece ( x, y ) board =
 chainOfSameColorHelper :
     Piece
     -> ( Int, Int )
-    -> ( BoardSearch, Dict ( Int, Int ) Piece )
-    -> ( BoardSearch, Dict ( Int, Int ) Piece )
+    -> ( BoardSearch, Chain )
+    -> ( BoardSearch, Chain )
 chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
     let
         match =
@@ -178,6 +184,17 @@ chainOfSameColorHelper piece ( x, y ) ( boardSearch, results ) =
 
         Nothing ->
             ( newBoardSearch, results )
+
+
+chainScore : Chain -> Int
+chainScore chain =
+    let
+        n =
+            toFloat <| Dict.size chain
+    in
+    logBase (toFloat minChain) n
+        |> (*) (n * 10)
+        |> round
 
 
 removePieces : Dict ( Int, Int ) Piece -> List Piece -> Board -> ( Board, List Piece, Dict ( Int, Int ) Int )
