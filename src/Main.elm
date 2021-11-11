@@ -8,6 +8,7 @@ import Dict exposing (Dict)
 import Html as H exposing (Html)
 import Html.Attributes as HA
 import Html.Events as HE
+import Html.Lazy as HL
 import Json.Decode as JD
 import Process
 import Random
@@ -248,9 +249,13 @@ view : Model -> Html Msg
 view model =
     H.div [ HA.class "gameContainer" ]
         [ H.div [ HA.style "position" "relative" ]
-            [ viewBoard model
+            [ if Dict.isEmpty model.removedPieces && Dict.isEmpty model.fallingPieces then
+                HL.lazy4 viewBoard 0 model.board model.removedPieces model.fallingPieces
+
+              else
+                viewBoard model.time model.board model.removedPieces model.fallingPieces
             , if model.isGameOver then
-                viewGameOver model
+                HL.lazy2 viewGameOver model.score model.isNewHighScore
 
               else
                 H.text ""
@@ -259,25 +264,25 @@ view model =
             H.text ""
 
           else
-            viewScore model
+            HL.lazy2 viewScore model.score model.highScore
         ]
 
 
-viewBoard : Model -> Svg Msg
-viewBoard model =
+viewBoard : Float -> Board -> RemovedPieces -> FallingPieces -> Svg Msg
+viewBoard time board removedPieces fallingPieces =
     let
         viewRow y row =
             Array.toList row
                 |> List.indexedMap
                     (\x piece ->
                         viewPiece
-                            { now = model.time
+                            { now = time
                             , x = x
                             , y = y
                             , piece = piece
                             , isRemoving = False
                             , fallingFrom =
-                                Dict.get ( x, y ) model.fallingPieces
+                                Dict.get ( x, y ) fallingPieces
                             }
                     )
 
@@ -295,26 +300,26 @@ viewBoard model =
                 |> String.join " "
             )
         ]
-        [ S.g [] <| viewFallingPieces model
+        [ S.g [] <| viewFallingPieces time board removedPieces
         , S.g []
-            (Array.toList model.board
+            (Array.toList board
                 |> List.indexedMap viewRow
                 |> List.concat
             )
         ]
 
 
-viewFallingPieces : Model -> List (Svg Msg)
-viewFallingPieces model =
+viewFallingPieces : Float -> Board -> RemovedPieces -> List (Svg Msg)
+viewFallingPieces time board removedPieces =
     let
         viewRow y row =
             Array.toList row
                 |> List.indexedMap
                     (\x _ ->
-                        case Dict.get ( x, y ) model.removedPieces of
+                        case Dict.get ( x, y ) removedPieces of
                             Just p ->
                                 viewPiece
-                                    { now = model.time
+                                    { now = time
                                     , x = x
                                     , y = y
                                     , piece = p
@@ -326,7 +331,7 @@ viewFallingPieces model =
                                 H.text ""
                     )
     in
-    Array.toList model.board
+    Array.toList board
         |> List.indexedMap viewRow
         |> List.concat
 
@@ -424,8 +429,8 @@ viewPiece { now, x, y, piece, isRemoving, fallingFrom } =
         ]
 
 
-viewGameOver : { a | score : Int, isNewHighScore : Bool } -> Html Msg
-viewGameOver { score, isNewHighScore } =
+viewGameOver : Int -> Bool -> Html Msg
+viewGameOver score isNewHighScore =
     H.div [ HA.class "gameOverScreen" ]
         [ H.div [ HA.class "gameOverScreen_text" ]
             [ H.p [ HA.class "gameOverScreen_title" ] [ H.text "Game over" ]
@@ -447,8 +452,8 @@ viewGameOver { score, isNewHighScore } =
         ]
 
 
-viewScore : { a | score : Int, highScore : Maybe Int } -> Html Msg
-viewScore { score, highScore } =
+viewScore : Int -> Maybe Int -> Html Msg
+viewScore score highScore =
     H.p [ HA.class "gameScore" ]
         [ H.text <| "Score: " ++ String.fromInt score
         , H.br [] []
