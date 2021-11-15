@@ -53,7 +53,7 @@ type alias Model =
     , isGameOver : Bool
     , piecesQueue : List Piece
     , score : Int
-    , highScore : Maybe Int
+    , highScore : Int
     , isNewHighScore : Bool
     , removedPieces : RemovedPieces
     , fallingPieces : FallingPieces
@@ -87,6 +87,7 @@ init flags =
             JD.decodeValue (JD.field "highScore" JD.string) flags
                 |> Result.toMaybe
                 |> Maybe.andThen String.toInt
+                |> Maybe.withDefault 0
 
         cmd =
             generateBoardCmd
@@ -220,17 +221,15 @@ update msg model =
 
         GameOver ->
             let
-                ( highScore, isNewHighScore ) =
-                    case model.highScore of
-                        Nothing ->
-                            ( model.score, True )
+                highScore =
+                    max model.highScore model.score
 
-                        Just hs ->
-                            ( max hs model.score, model.score > hs )
+                isNewHighScore =
+                    model.score > model.highScore
             in
             ( { model
                 | isGameOver = True
-                , highScore = Just highScore
+                , highScore = highScore
                 , isNewHighScore = isNewHighScore
               }
             , if isNewHighScore then
@@ -538,17 +537,12 @@ viewGameOver score isNewHighScore =
         ]
 
 
-viewScore : Int -> Maybe Int -> Html Msg
+viewScore : Int -> Int -> Html Msg
 viewScore score highScore =
     H.p [ HA.class "gameScore" ]
         [ H.text <| "Score: " ++ String.fromInt score
         , H.br [] []
-        , case highScore of
-            Just hs ->
-                H.text <| "High score: " ++ String.fromInt (max hs score)
-
-            Nothing ->
-                H.text ""
+        , H.text <| "High score: " ++ String.fromInt (max highScore score)
         ]
 
 
