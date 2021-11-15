@@ -17,8 +17,8 @@ deploy-pages: clean
 	git checkout f2568b9
 	git branch -D gh-pages
 	git checkout -b gh-pages
-	mv dist/* .
-	git add index.html assets
+	git add dist
+	git mv dist/* .
 	git commit -m "chore: release ${VERSION_ID}"
 	git push -f origin gh-pages
 	git checkout main
