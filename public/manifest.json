@@ -1,0 +1,15 @@
+{
+  "background_color": "#333",
+  "description": "A classic mini-game",
+  "display": "fullscreen",
+  "icons": [
+    {
+      "src": "img/logo.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ],
+  "name": "Pop 3!",
+  "short_name": "pop3",
+  "start_url": "/index.html"
+}
