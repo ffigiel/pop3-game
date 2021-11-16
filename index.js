@@ -1,4 +1,7 @@
+import { registerSW } from 'virtual:pwa-register'
 import { Elm } from './src/Main.elm'
+
+registerSW()
 
 const app = Elm.Main.init({
   node: document.getElementById("app"),
