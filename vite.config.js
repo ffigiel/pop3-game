@@ -17,7 +17,6 @@ export default defineConfig(({ mode }) => {
           short_name: "pop3",
           display: "standalone",
           description: "A classic mini-game",
-          theme_color: '#d06060',
           background_color: '#222222',
           icons: [{
             src: "img/pop3_icon.png",
