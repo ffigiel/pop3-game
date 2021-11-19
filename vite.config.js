@@ -16,11 +16,17 @@ export default defineConfig(({ mode }) => {
           short_name: "pop3",
           display: "standalone",
           description: "A classic mini-game",
-          background_color: '#333333',
+          theme_color: '#d06060',
+          background_color: '#222222',
           icons: [{
-            src: "img/logo.png",
-            sizes: "256x256",
+            src: "img/pop3_icon.png",
+            sizes: "512x512",
             type: "image/png",
+          }, {
+            src: "img/pop3_maskable.png",
+            sizes: "640x640",
+            type: "image/png",
+            purpose: "maskable",
           }],
         }
       }),
