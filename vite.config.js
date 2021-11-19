@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
       : '/pop3-game/',
     plugins: [
       VitePWA({
+        registerType: 'autoUpdate',
         includeAssets: ['favicon.ico'],
         manifest: {
           name: "Pop 3!",
