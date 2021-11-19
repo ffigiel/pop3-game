@@ -72,7 +72,7 @@ button {
 /* UI */
 
 html {
-  background: #333;
+  background: #222;
   color: #eee;
 }
 
@@ -110,21 +110,21 @@ html {
   fill: var(--purple);
 }
 .gamePiece text {
-  fill: #3336;
+  fill: #000;
+  opacity: 0.33;
   user-select: none;
   pointer-events: none;
 }
 
 .gameScore {
   margin-left: var(--font-s);
-  color: #eee9;
 }
 
 .gameOverScreen {
   position: absolute;
   inset: 0;
   display: grid;
-  background-color: #3339;
+  background-color: #0006;
   place-items: center;
   backdrop-filter: grayscale(40%);
   animation: 2300ms floatIn;
@@ -135,7 +135,7 @@ html {
   align-items: center;
   gap: var(--font-xs);
   text-align: center;
-  text-shadow: 0 0.1em 0.05em #333;
+  text-shadow: 0 0.1em 0.05em #0006;
   user-select: none;
 }
 .gameOverScreen_title {
@@ -159,8 +159,8 @@ html {
   border: 2px solid;
   border-radius: var(--font-m);
   padding: var(--font-s) var(--font-m);
-  box-shadow: 0 0.1em 0.05em #333;
-  background-color: #3339;
+  box-shadow: 0 0.1em 0.05em #0006;
+  background-color: #0006;
   font-size: var(--font-s);
   text-align: justify;
   color: var(--yellow);
