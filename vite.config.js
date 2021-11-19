@@ -8,9 +8,6 @@ export default defineConfig(({ mode }) => {
     base: isDev
       ? '/'
       : '/pop3-game/',
-    build: {
-      publicDir: 'public'
-    },
     plugins: [
       VitePWA({
         includeAssets: ['favicon.ico'],
