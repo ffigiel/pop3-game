@@ -12,8 +12,7 @@ dist: clean
 dev:
 	npx vite
 
-deploy-pages: clean
-	npx vite build --base /pop3-game/
+deploy-pages: dist
 	git checkout f2568b9
 	git branch -D gh-pages
 	git checkout -b gh-pages
