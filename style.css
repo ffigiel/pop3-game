@@ -2,13 +2,14 @@
 
 :root {
   --bg: #222222;
-  --text: #dddddd;
+  --text: #cccccc;
 
   --red: #d06060;
   --yellow: #f0bd62;
   --green: #6ead54;
   --blue: #5eb3e2;
   --purple: #8d75cd;
+  --shadow: rgba(0, 0, 0, 0.6);
 
   --font:
     -apple-system,
@@ -126,11 +127,11 @@ svg text {
 .gameOverScreen {
   position: fixed;
   inset: 0;
-  display: grid;
-  background-color: #0006;
-  place-items: center;
-  backdrop-filter: grayscale(40%);
-  animation: 2300ms floatIn;
+  padding-top: 8rem;
+  background-color: var(--shadow);
+  animation: 2300ms floatIn, 3800ms backgroundBlur;
+  transition-timing-function: ease-out;
+  animation-fill-mode: none, both
 }
 .gameOverScreen_text {
   display: flex;
@@ -138,7 +139,7 @@ svg text {
   align-items: center;
   gap: var(--font-xs);
   text-align: center;
-  text-shadow: 0 0.1em 0.05em #0006;
+  text-shadow: 0 0.1em 0.05em var(--shadow);
   user-select: none;
 }
 .gameOverScreen_title {
@@ -159,11 +160,11 @@ svg text {
   display: flex;
   flex-direction: column;
   gap: var(--font-xs);
-  border: 2px solid;
+  border: 0.1rem solid;
   border-radius: var(--font-m);
   padding: var(--font-s) var(--font-m);
-  box-shadow: 0 0.1em 0.05em #0006;
-  background-color: #0006;
+  box-shadow: 0 0.1em 0.05em var(--shadow);
+  background-color: var(--shadow);
   font-size: var(--font-s);
   text-align: justify;
   color: var(--yellow);
@@ -180,5 +181,11 @@ svg text {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes backgroundBlur {
+  to {
+    backdrop-filter: blur(0.1rem) grayscale(50%);
   }
 }
