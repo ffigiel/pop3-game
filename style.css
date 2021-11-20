@@ -1,13 +1,16 @@
-/* Reset */
+/* Vars */
 
-html,
-body {
-  padding: 0;
-  margin: 0;
-}
+:root {
+  --bg: #222222;
+  --text: #dddddd;
 
-html {
-  font-family:
+  --red: #d06060;
+  --yellow: #f0bd62;
+  --green: #6ead54;
+  --blue: #5eb3e2;
+  --purple: #8d75cd;
+
+  --font:
     -apple-system,
     blinkmacsystemfont,
     segoe ui,
@@ -17,6 +20,30 @@ html {
     cantarell,
     helvetica neue,
     sans-serif;
+
+  --font-l: 3.2rem;
+  --font-m: 2rem;
+  --font-s: 1.2rem;
+  --font-xs: 0.72rem;
+}
+
+
+/* Reset */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
   line-height: 1.3;
   font-weight: bold;
 }
@@ -35,10 +62,6 @@ a:hover {
   transform: scale(110%);
 }
 
-* {
-  box-sizing: border-box;
-}
-
 button {
   font-size: inherit;
   font-family: inherit;
@@ -52,28 +75,8 @@ button {
   cursor: pointer;
 }
 
-
-/* Vars */
-
-:root {
-  --red: #d06060;
-  --yellow: #f0bd62;
-  --green: #6ead54;
-  --blue: #5eb3e2;
-  --purple: #8d75cd;
-
-  --font-l: 3.2rem;
-  --font-m: 2rem;
-  --font-s: 1.2rem;
-  --font-xs: 0.72rem;
-}
-
-
-/* UI */
-
-html {
-  background: #222222;
-  color: #eee;
+svg text {
+  fill: currentColor;
 }
 
 
@@ -121,7 +124,7 @@ html {
 }
 
 .gameOverScreen {
-  position: absolute;
+  position: fixed;
   inset: 0;
   display: grid;
   background-color: #0006;

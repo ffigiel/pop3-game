@@ -289,22 +289,80 @@ fallingAnimationDuration =
     400
 
 
+gap : Float
+gap =
+    1
+
+
+boardGutter : Float
+boardGutter =
+    gap
+
+
+pieceSize : Float
+pieceSize =
+    5
+
+
+textHeight : Float
+textHeight =
+    2
+
+
+pieceRenderPosition : ( Int, Int ) -> ( Float, Float )
+pieceRenderPosition ( x, y ) =
+    let
+        pieceSizeWithGutter =
+            pieceSize + boardGutter
+    in
+    ( toFloat x * pieceSizeWithGutter
+    , toFloat y * pieceSizeWithGutter
+    )
+
+
 view : Model -> Html Msg
 view model =
+    let
+        ( width, boardHeight ) =
+            pieceRenderPosition ( Board.numCols, Board.numRows )
+                |> (\( w, h ) -> ( w - boardGutter, h - boardGutter ))
+
+        height =
+            boardHeight + gap + textHeight + gap + textHeight
+    in
     H.div [ HA.class "gameContainer" ]
-        [ H.div [ HA.style "position" "relative" ]
+        [ S.svg
+            [ SA.viewBox
+                ([ -gap
+                 , -gap
+                 , width + 2 * gap
+                 , height + 2 * gap
+                 ]
+                    |> List.map String.fromFloat
+                    |> String.join " "
+                )
+            ]
             [ if Dict.isEmpty model.removedPieces && Dict.isEmpty model.fallingPieces then
                 HL.lazy4 viewBoard 0 model.board model.removedPieces model.fallingPieces
 
               else
                 viewBoard model.time model.board model.removedPieces model.fallingPieces
-            , if model.isGameOver then
-                HL.lazy2 viewGameOver model.score model.isNewHighScore
-
-              else
-                H.text ""
+            , S.g
+                [ SA.transform <|
+                    "translate("
+                        ++ String.fromFloat 0
+                        ++ " "
+                        ++ String.fromFloat (boardHeight + gap)
+                        ++ ")"
+                ]
+                [ HL.lazy2 viewScore model.score model.highScore
+                ]
             ]
-        , HL.lazy2 viewScore model.score model.highScore
+        , if model.isGameOver then
+            HL.lazy2 viewGameOver model.score model.isNewHighScore
+
+          else
+            H.text ""
         ]
 
 
@@ -329,21 +387,8 @@ viewBoard time board removedPieces fallingPieces =
                                         PieceIdle
                             }
                     )
-
-        ( width, height ) =
-            Board.boardRenderSize
     in
-    S.svg
-        [ SA.viewBox
-            ([ -Board.padding
-             , -Board.padding
-             , width + 2 * Board.padding
-             , height + 2 * Board.padding
-             ]
-                |> List.map String.fromFloat
-                |> String.join " "
-            )
-        ]
+    S.g []
         [ S.g [] <| viewRemovedPieces time board removedPieces
         , S.g []
             (Array.toList board
@@ -413,7 +458,7 @@ viewPiece { now, x, y, piece, animation } =
                     ( "-purple", "■" )
 
         ( xPos, yPos, otherAttrs ) =
-            Board.pieceRenderPosition ( x, y )
+            pieceRenderPosition ( x, y )
                 |> (\( xp, yp ) ->
                         case animation of
                             PieceIdle ->
@@ -448,7 +493,7 @@ viewPiece { now, x, y, piece, animation } =
                             PieceFalling f ->
                                 let
                                     totalDistance =
-                                        toFloat f.distance * (Board.pieceSize + Board.gutter)
+                                        toFloat f.distance * (pieceSize + boardGutter)
 
                                     animationProgress =
                                         (now - f.start)
@@ -465,9 +510,9 @@ viewPiece { now, x, y, piece, animation } =
     S.g
         [ SA.transform <|
             "translate("
-                ++ String.fromFloat (xPos + (Board.pieceSize / 2))
+                ++ String.fromFloat (xPos + (pieceSize / 2))
                 ++ " "
-                ++ String.fromFloat (yPos + (Board.pieceSize / 2))
+                ++ String.fromFloat (yPos + (pieceSize / 2))
                 ++ ")"
         ]
         [ S.g
@@ -477,7 +522,7 @@ viewPiece { now, x, y, piece, animation } =
                 ++ otherAttrs
             )
             [ S.circle
-                [ SA.r <| String.fromFloat <| Board.pieceSize / 2
+                [ SA.r <| String.fromFloat <| pieceSize / 2
                 ]
                 []
             , S.text_
@@ -539,10 +584,22 @@ viewGameOver score isNewHighScore =
 
 viewScore : Int -> Int -> Html Msg
 viewScore score highScore =
-    H.p [ HA.class "gameScore" ]
-        [ H.text <| "Score: " ++ String.fromInt score
-        , H.br [] []
-        , H.text <| "High score: " ++ String.fromInt (max highScore score)
+    let
+        text attrs content =
+            S.text_
+                ((SA.fontSize <| String.fromFloat textHeight)
+                    :: (SA.dy <| String.fromFloat (textHeight * 0.8))
+                    :: attrs
+                )
+                [ S.text content ]
+    in
+    S.g []
+        [ text []
+            ("Score: " ++ String.fromInt score)
+        , text
+            [ SA.y <| String.fromFloat (gap + textHeight)
+            ]
+            ("High score: " ++ String.fromInt (max highScore score))
         ]
 
 

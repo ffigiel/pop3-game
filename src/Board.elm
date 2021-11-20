@@ -2,19 +2,14 @@ module Board exposing
     ( Board
     , Chain
     , Piece(..)
-    , boardRenderSize
     , chainOfSameColor
     , chainScore
     , generator
-    , gutter
     , isGameOver
     , minChain
     , myHighScore
     , numCols
     , numRows
-    , padding
-    , pieceRenderPosition
-    , pieceSize
     , piecesQueueGenerator
     , queueSize
     , removePieces
@@ -31,21 +26,6 @@ myHighScore =
     6969
 
 
-padding : Float
-padding =
-    gutter
-
-
-gutter : Float
-gutter =
-    1
-
-
-pieceSize : Float
-pieceSize =
-    5
-
-
 numCols : Int
 numCols =
     6
@@ -54,23 +34,6 @@ numCols =
 numRows : Int
 numRows =
     8
-
-
-boardRenderSize : ( Float, Float )
-boardRenderSize =
-    pieceRenderPosition ( numCols, numRows )
-        |> (\( w, h ) -> ( w - gutter, h - gutter ))
-
-
-pieceRenderPosition : ( Int, Int ) -> ( Float, Float )
-pieceRenderPosition ( x, y ) =
-    let
-        pieceSizeWithGutter =
-            pieceSize + gutter
-    in
-    ( toFloat x * pieceSizeWithGutter
-    , toFloat y * pieceSizeWithGutter
-    )
 
 
 minChain : Int
