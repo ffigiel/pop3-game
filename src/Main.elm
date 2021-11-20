@@ -510,6 +510,9 @@ viewPiece { now, x, y, piece, animation } =
                                 in
                                 ( xp, yp - yOffset, [] )
                    )
+
+        clickDecoder =
+            JD.succeed <| ClickedPiece piece ( x, y )
     in
     S.g
         [ SA.transform <|
@@ -521,7 +524,8 @@ viewPiece { now, x, y, piece, animation } =
         ]
         [ S.g
             ([ SA.class <| "gamePiece " ++ colorClass
-             , SE.onClick <| ClickedPiece piece ( x, y )
+             , SE.on "mousedown" clickDecoder
+             , SE.on "touchstart" clickDecoder
              ]
                 ++ otherAttrs
             )
