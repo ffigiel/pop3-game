@@ -39,6 +39,9 @@ main =
 port saveHighScore : Int -> Cmd msg
 
 
+port vibrate : () -> Cmd msg
+
+
 
 -- MODEL
 
@@ -200,6 +203,7 @@ update msg model =
 
                       else
                         Cmd.none
+                    , vibrate ()
                     ]
                 )
 

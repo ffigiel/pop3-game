@@ -12,3 +12,6 @@ const app = Elm.Main.init({
 app.ports.saveHighScore.subscribe(hs => {
   window.localStorage.setItem("highScore", hs)
 })
+app.ports.vibrate.subscribe(() => {
+  window.navigator.vibrate(1)
+})
