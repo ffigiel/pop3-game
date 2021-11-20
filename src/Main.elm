@@ -157,6 +157,21 @@ update msg model =
                     newScore =
                         model.score + Board.chainScore chain
 
+                    removingAnimationStagger =
+                        -- longer, more satisfying animation for longer chains
+                        let
+                            base =
+                                toFloat Board.minChain
+                        in
+                        toFloat (Dict.size chain)
+                            |> (\n -> ((n / base) + logBase base n) / 2)
+                            |> (*) removingAnimationBaseStagger
+
+                    fallingAnimationDelay =
+                        -- begin the falling animation when the last removed piece animation is
+                        -- halfway through
+                        removingAnimationStagger - (removingAnimationDuration / 2)
+
                     removedPieces =
                         let
                             maxOrder =
@@ -178,6 +193,9 @@ update msg model =
                                 { start = model.time + delay, piece = v.piece }
                             )
                             chain
+
+                    totalAnimationsDuration =
+                        fallingAnimationDelay + fallingAnimationDuration
                 in
                 ( { model
                     | score = newScore
@@ -187,7 +205,7 @@ update msg model =
                         fallingPieces
                             |> Dict.map
                                 (\_ v ->
-                                    { start = model.time + removingAnimationDuration
+                                    { start = model.time + fallingAnimationDelay
                                     , distance = v
                                     }
                                 )
@@ -197,12 +215,12 @@ update msg model =
                     [ refillPiecesQueue newPiecesQueue
                     , Task.perform
                         (\_ -> RemoveAnimationState newScore)
-                        (Process.sleep (removingAnimationDuration + fallingAnimationDuration))
+                        (Process.sleep totalAnimationsDuration)
                     , if Board.isGameOver newBoard then
                         -- show game over screen once the animations complete
                         Task.perform
                             (\_ -> GameOver)
-                            (Process.sleep (removingAnimationDuration + fallingAnimationDuration))
+                            (Process.sleep totalAnimationsDuration)
 
                       else
                         Cmd.none
@@ -282,14 +300,14 @@ animationScale =
     1
 
 
-removingAnimationStagger : number
-removingAnimationStagger =
-    400 * animationScale
+removingAnimationBaseStagger : number
+removingAnimationBaseStagger =
+    300 * animationScale
 
 
 removingAnimationDuration : number
 removingAnimationDuration =
-    400 * animationScale
+    500 * animationScale
 
 
 fallingAnimationDuration : number
@@ -507,7 +525,15 @@ viewPiece { now, x, y, piece, animation } =
                                         (now - f.start)
                                             |> clamp 0 fallingAnimationDuration
                                             |> (\duration -> duration / fallingAnimationDuration)
-                                            |> (\n -> (0.8 * Ease.outBack n) + (0.2 * Ease.inOutQuad n))
+                                            -- Decrease outBack's inital speed
+                                            |> Ease.inSine
+                                            -- Gradually scale from inOutSine to outBack. This
+                                            -- smoothes outBack's initial jerk even more and dampens
+                                            -- its final overshoot, for a more pleasant animation.
+                                            |> (\n ->
+                                                    ((1 - n) * Ease.inOutSine n)
+                                                        + (n * Ease.outBack n)
+                                               )
 
                                     yOffset =
                                         totalDistance * (1 - animationProgress)
