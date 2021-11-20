@@ -5,6 +5,7 @@ import Board exposing (Board, Piece(..))
 import Browser
 import Browser.Events
 import Dict exposing (Dict)
+import Ease
 import Html as H exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -170,7 +171,9 @@ update msg model =
                             (\_ v ->
                                 let
                                     delay =
-                                        removingAnimationStagger * toFloat v.order / toFloat (maxOrder + 1)
+                                        (toFloat v.order / toFloat (maxOrder + 1))
+                                            |> Ease.inSine
+                                            |> (*) removingAnimationStagger
                                 in
                                 { start = model.time + delay, piece = v.piece }
                             )
@@ -184,7 +187,7 @@ update msg model =
                         fallingPieces
                             |> Dict.map
                                 (\_ v ->
-                                    { start = model.time + fallingAnimationDelay
+                                    { start = model.time + removingAnimationDuration
                                     , distance = v
                                     }
                                 )
@@ -194,12 +197,12 @@ update msg model =
                     [ refillPiecesQueue newPiecesQueue
                     , Task.perform
                         (\_ -> RemoveAnimationState newScore)
-                        (Process.sleep (fallingAnimationDelay + fallingAnimationDuration))
+                        (Process.sleep (removingAnimationDuration + fallingAnimationDuration))
                     , if Board.isGameOver newBoard then
                         -- show game over screen once the animations complete
                         Task.perform
                             (\_ -> GameOver)
-                            (Process.sleep (fallingAnimationDelay + fallingAnimationDuration))
+                            (Process.sleep (removingAnimationDuration + fallingAnimationDuration))
 
                       else
                         Cmd.none
@@ -273,24 +276,25 @@ subscriptions _ =
 -- VIEW
 
 
+animationScale : number
+animationScale =
+    -- for testing
+    1
+
+
 removingAnimationStagger : number
 removingAnimationStagger =
-    400
+    400 * animationScale
 
 
 removingAnimationDuration : number
 removingAnimationDuration =
-    300
-
-
-fallingAnimationDelay : number
-fallingAnimationDelay =
-    300
+    400 * animationScale
 
 
 fallingAnimationDuration : number
 fallingAnimationDuration =
-    400
+    500 * animationScale
 
 
 gap : Float
@@ -474,7 +478,7 @@ viewPiece { now, x, y, piece, animation } =
                                         (now - f.start)
                                             |> clamp 0 removingAnimationDuration
                                             |> (\duration -> duration / removingAnimationDuration)
-                                            |> (\p -> p * p)
+                                            |> Ease.outQuad
 
                                     opacity =
                                         1 - animationProgress
@@ -503,7 +507,7 @@ viewPiece { now, x, y, piece, animation } =
                                         (now - f.start)
                                             |> clamp 0 fallingAnimationDuration
                                             |> (\duration -> duration / fallingAnimationDuration)
-                                            |> (\p -> p * p * pi / 2 |> sin)
+                                            |> (\n -> (0.8 * Ease.outBack n) + (0.2 * Ease.inOutQuad n))
 
                                     yOffset =
                                         totalDistance * (1 - animationProgress)
