@@ -33,6 +33,8 @@
 
 * {
   box-sizing: border-box;
+  animation-timing-function: ease-out;
+  transition-timing-function: ease-out;
 }
 
 html,
@@ -57,7 +59,6 @@ a {
   text-decoration: none;
   color: var(--red);
   transition: transform 200ms;
-  transition-timing-function: ease-out;
 }
 a:hover {
   transform: scale(110%);
@@ -93,7 +94,6 @@ svg text {
   cursor: pointer;
   touch-action: none;
   transition: transform 200ms;
-  transition-timing-function: ease-out;
 }
 .gamePiece:hover {
   transform: scale(110%);
@@ -130,7 +130,6 @@ svg text {
   padding-top: 8rem;
   background-color: var(--shadow);
   animation: 2300ms floatIn, 3800ms backgroundBlur;
-  transition-timing-function: ease-out;
   animation-fill-mode: none, both
 }
 .gameOverScreen_text {
@@ -150,7 +149,6 @@ svg text {
   animation-fill-mode: backwards;
   animation-delay: 500ms;
   transition: transform 200ms;
-  transition-timing-function: ease-out;
 }
 .gameOverScreen button:hover {
   transform: scale(110%);
