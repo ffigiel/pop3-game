@@ -13,8 +13,8 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico'],
         manifest: {
-          name: "Pop 3!",
-          short_name: "pop3",
+          name: "Pop 3",
+          short_name: "Pop 3",
           display: "standalone",
           description: "A classic mini-game",
           background_color: '#222222',
