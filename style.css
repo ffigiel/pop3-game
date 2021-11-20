@@ -60,8 +60,11 @@ a {
   color: var(--red);
   transition: transform 200ms;
 }
-a:hover {
-  transform: scale(110%);
+
+@media (hover: hover) {
+  a:hover {
+    transform: scale(110%);
+  }
 }
 
 button {
@@ -79,6 +82,7 @@ button {
 
 svg text {
   fill: currentColor;
+  user-select: none;
 }
 
 
@@ -95,8 +99,11 @@ svg text {
   touch-action: none;
   transition: transform 200ms;
 }
-.gamePiece:hover {
-  transform: scale(110%);
+
+@media (hover: hover) {
+  .gamePiece:hover {
+    transform: scale(110%);
+  }
 }
 .gamePiece.-red circle {
   fill: var(--red);
@@ -116,7 +123,6 @@ svg text {
 .gamePiece text {
   fill: #000;
   opacity: 0.33;
-  user-select: none;
   pointer-events: none;
 }
 
@@ -150,8 +156,10 @@ svg text {
   animation-delay: 500ms;
   transition: transform 200ms;
 }
-.gameOverScreen button:hover {
-  transform: scale(110%);
+@media (hover: hover) {
+  .gameOverScreen button:hover {
+    transform: scale(110%);
+  }
 }
 .gameOverScreen_congrats {
   margin-top: var(--font-m);
