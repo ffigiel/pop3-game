@@ -69,7 +69,7 @@ type alias RemovedPieces =
 
 
 type alias FallingPieces =
-    Dict ( Int, Int ) { start : Float, distance : Int }
+    Dict ( Int, Int ) { start : Float, duration : Float, distance : Int }
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -157,70 +157,47 @@ update msg model =
                     newScore =
                         model.score + Board.chainScore chain
 
-                    removingAnimationStagger =
-                        -- longer, more satisfying animation for longer chains
-                        let
-                            base =
-                                toFloat Board.minChain
-                        in
-                        toFloat (Dict.size chain)
-                            |> (\n -> ((n / base) + logBase base n) / 2)
-                            |> (*) removingAnimationBaseStagger
-
-                    fallingAnimationDelay =
-                        -- begin the falling animation when the last removed piece animation is
-                        -- halfway through
-                        removingAnimationStagger - (removingAnimationDuration / 2)
-
                     removedPieces =
-                        let
-                            maxOrder =
-                                Dict.foldl
-                                    (\_ { order } n ->
-                                        max order n
-                                    )
-                                    0
-                                    chain
-                        in
                         Dict.map
-                            (\_ v ->
-                                let
-                                    delay =
-                                        (toFloat v.order / toFloat (maxOrder + 1))
-                                            |> Ease.inSine
-                                            |> (*) removingAnimationStagger
-                                in
-                                { start = model.time + delay, piece = v.piece }
+                            (\_ p ->
+                                { start = model.time, piece = p }
                             )
                             chain
 
-                    totalAnimationsDuration =
-                        fallingAnimationDelay + fallingAnimationDuration
+                    maxDistance =
+                        fallingPieces
+                            |> Dict.foldl (\_ distance acc -> max distance acc) 0
+
+                    newFallingPieces =
+                        fallingPieces
+                            |> Dict.map
+                                (\_ distance ->
+                                    { start = model.time
+                                    , duration = calcFallingAnimationDuration distance
+                                    , distance = distance
+                                    }
+                                )
+
+                    animationsDuration =
+                        calcFallingAnimationDuration maxDistance
                 in
                 ( { model
                     | score = newScore
                     , removedPieces = removedPieces
                     , board = newBoard
-                    , fallingPieces =
-                        fallingPieces
-                            |> Dict.map
-                                (\_ v ->
-                                    { start = model.time + fallingAnimationDelay
-                                    , distance = v
-                                    }
-                                )
+                    , fallingPieces = newFallingPieces
                     , piecesQueue = newPiecesQueue
                   }
                 , Cmd.batch
                     [ refillPiecesQueue newPiecesQueue
                     , Task.perform
                         (\_ -> RemoveAnimationState newScore)
-                        (Process.sleep totalAnimationsDuration)
+                        (Process.sleep animationsDuration)
                     , if Board.isGameOver newBoard then
-                        -- show game over screen once the animations complete
+                        -- show game over screen with a small delay after click
                         Task.perform
                             (\_ -> GameOver)
-                            (Process.sleep totalAnimationsDuration)
+                            (Process.sleep gameOverScreenDelay)
 
                       else
                         Cmd.none
@@ -285,6 +262,13 @@ refillPiecesQueue queue =
         Cmd.none
 
 
+calcFallingAnimationDuration : Int -> Float
+calcFallingAnimationDuration distance =
+    -- slightly longer falling animation for higher distances
+    logBase (toFloat Board.minChain) (toFloat <| Board.minChain + distance - 1)
+        * fallingAnimationBaseDuration
+
+
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Browser.Events.onAnimationFrameDelta Tick
@@ -300,19 +284,47 @@ animationScale =
     1
 
 
-removingAnimationBaseStagger : number
-removingAnimationBaseStagger =
-    300 * animationScale
-
-
 removingAnimationDuration : number
 removingAnimationDuration =
-    500 * animationScale
+    400 * animationScale
 
 
-fallingAnimationDuration : number
-fallingAnimationDuration =
-    500 * animationScale
+fallingAnimationBaseDuration : number
+fallingAnimationBaseDuration =
+    400 * animationScale
+
+
+gameOverScreenDelay : number
+gameOverScreenDelay =
+    200 * animationScale
+
+
+calcAnimationProgress : Float -> Float -> Float -> Float
+calcAnimationProgress tNow tStart duration =
+    ((tNow - tStart) / duration)
+        |> clamp 0 1
+
+
+fallingAnimationEasing : Int -> Ease.Easing
+fallingAnimationEasing distance =
+    Ease.inOut Ease.inBack (easeOutBackDampened distance)
+
+
+easeOutBackDampened : Int -> Ease.Easing
+easeOutBackDampened dampening t =
+    -- dampening prevents the pieces from overlapping
+    let
+        y =
+            Ease.outBack t
+
+        fd =
+            toFloat dampening
+    in
+    if y > 1 then
+        (y + fd - 1) / fd
+
+    else
+        y
 
 
 gap : Float
@@ -453,7 +465,7 @@ viewRemovedPieces time board removedPieces =
 type PieceAnimation
     = PieceIdle
     | PieceRemoving { start : Float }
-    | PieceFalling { start : Float, distance : Int }
+    | PieceFalling { start : Float, duration : Float, distance : Int }
 
 
 viewPiece :
@@ -493,9 +505,7 @@ viewPiece { now, x, y, piece, animation } =
                             PieceRemoving f ->
                                 let
                                     animationProgress =
-                                        (now - f.start)
-                                            |> clamp 0 removingAnimationDuration
-                                            |> (\duration -> duration / removingAnimationDuration)
+                                        calcAnimationProgress now f.start removingAnimationDuration
                                             |> Ease.outQuad
 
                                     opacity =
@@ -522,18 +532,8 @@ viewPiece { now, x, y, piece, animation } =
                                         toFloat f.distance * (pieceSize + boardGutter)
 
                                     animationProgress =
-                                        (now - f.start)
-                                            |> clamp 0 fallingAnimationDuration
-                                            |> (\duration -> duration / fallingAnimationDuration)
-                                            -- Decrease outBack's inital speed
-                                            |> Ease.inSine
-                                            -- Gradually scale from inOutSine to outBack. This
-                                            -- smoothes outBack's initial jerk even more and dampens
-                                            -- its final overshoot, for a more pleasant animation.
-                                            |> (\n ->
-                                                    ((1 - n) * Ease.inOutSine n)
-                                                        + (n * Ease.outBack n)
-                                               )
+                                        calcAnimationProgress now f.start f.duration
+                                            |> fallingAnimationEasing f.distance
 
                                     yOffset =
                                         totalDistance * (1 - animationProgress)
