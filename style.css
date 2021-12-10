@@ -37,6 +37,10 @@
   transition-timing-function: ease-out;
 }
 
+:root {
+  color-scheme: dark;
+}
+
 html,
 body {
   padding: 0;
