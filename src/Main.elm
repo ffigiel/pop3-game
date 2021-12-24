@@ -370,7 +370,8 @@ view model =
     in
     H.div [ HA.class "gameContainer" ]
         [ S.svg
-            [ SA.viewBox
+            [ SA.id "gameView"
+            , SA.viewBox
                 ([ -gap
                  , -gap
                  , width + 2 * gap
