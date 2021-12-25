@@ -414,10 +414,18 @@ view model =
 
         height =
             boardHeight + gap + textHeight + gap + textHeight
+
+        gameViewMod =
+            if model.isGameOver then
+                "-gameOver"
+
+            else
+                ""
     in
     H.div [ HA.class "gameContainer" ]
         [ S.svg
             [ SA.id "gameView"
+            , SA.class gameViewMod
             , SA.viewBox
                 ([ -gap
                  , -gap
