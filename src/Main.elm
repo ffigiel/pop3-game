@@ -10,6 +10,7 @@ import Html as H exposing (Attribute, Html)
 import Html.Attributes as HA
 import Html.Events as HE
 import Html.Lazy as HL
+import I18n exposing (I18n)
 import Json.Decode as JD
 import Process
 import Random
@@ -52,7 +53,8 @@ type alias Flags =
 
 
 type alias Model =
-    { board : Board
+    { t : I18n
+    , board : Board
     , time : Float
     , isGameOver : Bool
     , piecesQueue : List Piece
@@ -76,7 +78,8 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
         model =
-            { board = Array.empty
+            { t = translations
+            , board = Array.empty
             , time = 0
             , isGameOver = False
             , piecesQueue = []
@@ -88,15 +91,59 @@ init flags =
             }
 
         highScore =
-            JD.decodeValue (JD.field "highScore" JD.string) flags
+            flags
+                |> JD.decodeValue (JD.field "highScore" JD.string)
                 |> Result.toMaybe
                 |> Maybe.andThen String.toInt
                 |> Maybe.withDefault 0
+
+        translations =
+            flags
+                |> JD.decodeValue (JD.field "language" languageDecoder)
+                |> Result.withDefault EN
+                |> languageToTranslations
 
         cmd =
             generateBoardCmd
     in
     ( model, cmd )
+
+
+type Language
+    = PL
+    | EN
+
+
+languageDecoder : JD.Decoder Language
+languageDecoder =
+    JD.string
+        |> JD.map languageFromString
+
+
+languageFromString : String -> Language
+languageFromString s =
+    let
+        sl =
+            s
+                |> String.toLower
+                |> String.left 2
+    in
+    case sl of
+        "pl" ->
+            PL
+
+        _ ->
+            EN
+
+
+languageToTranslations : Language -> I18n
+languageToTranslations lang =
+    case lang of
+        EN ->
+            I18n.en
+
+        PL ->
+            I18n.pl
 
 
 generateBoardCmd : Cmd Msg
@@ -394,11 +441,11 @@ view model =
                         ++ String.fromFloat (boardHeight + gap)
                         ++ ")"
                 ]
-                [ HL.lazy2 viewScore model.score model.highScore
+                [ HL.lazy3 viewScore model.t model.score model.highScore
                 ]
             ]
         , if model.isGameOver then
-            HL.lazy2 viewGameOver model.score model.isNewHighScore
+            HL.lazy3 viewGameOver model.t model.score model.isNewHighScore
 
           else
             H.text ""
@@ -574,25 +621,29 @@ viewPiece { now, x, y, piece, animation } =
         ]
 
 
-viewGameOver : Int -> Bool -> Html Msg
-viewGameOver score isNewHighScore =
+viewGameOver : I18n -> Int -> Bool -> Html Msg
+viewGameOver t score isNewHighScore =
     H.div [ HA.class "gameOverScreen" ]
         [ H.div [ HA.class "gameOverScreen_text" ]
-            [ H.p [ HA.class "gameOverScreen_title" ] [ H.text "Game over" ]
+            [ H.p
+                [ HA.class "gameOverScreen_title"
+                ]
+                [ H.text t.gameOver
+                ]
             , H.div []
                 [ H.p []
                     [ if isNewHighScore then
-                        H.text <| "New high score! " ++ String.fromInt score
+                        H.text <| t.newHighScore <| String.fromInt score
 
                       else
-                        H.text <| "Score: " ++ String.fromInt score
+                        H.text <| t.gameScore <| String.fromInt score
                     ]
                 , H.p []
                     [ H.button
                         [ HA.type_ "button"
                         , HE.onClick PlayAgainClicked
                         ]
-                        [ H.text "Play again?" ]
+                        [ H.text t.playAgainBtn ]
                     ]
                 ]
             , if score > Board.myHighScore then
@@ -600,18 +651,18 @@ viewGameOver score isNewHighScore =
                     [ HA.class "gameOverScreen_congrats"
                     ]
                     [ H.p []
-                        [ H.text "Congratulations!"
+                        [ H.text t.congratulations
                         , H.br [] []
-                        , H.text "You beat my high score."
+                        , H.text t.beatenHighScore
                         , H.br [] []
-                        , H.text "Thanks for playing!"
+                        , H.text t.thanksForPlaying
                         ]
                     , H.p []
                         [ externalLink
                             [ HA.href "https://github.com/megapctr/pop3-game"
                             , HA.style "font-size" "1.2rem"
                             ]
-                            [ H.text "View source code ↗" ]
+                            [ H.text t.viewSource ]
                         ]
                     ]
 
@@ -621,8 +672,8 @@ viewGameOver score isNewHighScore =
         ]
 
 
-viewScore : Int -> Int -> Html Msg
-viewScore score highScore =
+viewScore : I18n -> Int -> Int -> Html Msg
+viewScore t score highScore =
     let
         text attrs content =
             S.text_
@@ -634,11 +685,11 @@ viewScore score highScore =
     in
     S.g []
         [ text []
-            ("Score: " ++ String.fromInt score)
+            (t.gameScore <| String.fromInt score)
         , text
             [ SA.y <| String.fromFloat (gap + textHeight)
             ]
-            ("High score: " ++ String.fromInt (max highScore score))
+            (t.gameHighScore <| String.fromInt (max highScore score))
         ]
 
 
